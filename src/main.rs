@@ -8,10 +8,12 @@ mod snake;
 mod food;
 mod common;
 mod wall;
+mod splashscreen;
 
 use snake::Snake;
 use food::Food;
 use common::Position;
+use common::AppState;
 use wall::Wall;
 
 const SNAKE_Z_DEPTH: f32 = 100.0;
@@ -25,27 +27,13 @@ const GRID_SIZE: f32 = 30.0;
 const WINDOW_WIDTH: f32 = GRID_WIDTH as f32 * GRID_SIZE;
 const WINDOW_HEIGHT: f32 = GRID_HEIGHT as f32 * GRID_SIZE;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-enum AppState {
-    SplashScreen,
-    Gameplay,
-    GameOver
-}
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup_system)
         .add_system(exit_system)
         .add_state(AppState::SplashScreen)
-        .add_fixed_timestep(
-            std::time::Duration::from_millis(3000),
-            "splashscreen_delay",
-        )
-        .add_fixed_timestep(
-            std::time::Duration::from_millis(300),
-            "splashscreen_effect_delay",
-        )
+        .add_plugin(splashscreen::SplashScreenPlugin)
         .add_fixed_timestep(
             std::time::Duration::from_millis(5000),
             "gameplay_food_spawn_delay",
@@ -54,17 +42,6 @@ fn main() {
             std::time::Duration::from_millis(300),
             "gameplay_move_delay",
         )
-        .add_system_set(
-            SystemSet::on_enter(AppState::SplashScreen)
-                .with_system(spawn_splashscreen_system))
-        .add_fixed_timestep_system(
-            "splashscreen_delay",
-            0,
-            start_game_system.run_if(in_splashscreen))
-        .add_fixed_timestep_system(
-            "splashscreen_effect_delay",
-            0,
-            change_color_system.run_if(in_splashscreen))
         .add_system_set(
             SystemSet::on_enter(AppState::Gameplay)
                 .with_system(spawn_walls_system)
@@ -96,21 +73,8 @@ fn convert_to_screen_coordinates(position: Position) -> (f32, f32) {
     (x, y)
 }
 
-fn in_splashscreen(state: Res<State<AppState>>) -> bool {
-    in_expected_state(state, AppState::SplashScreen)
-}
-
 fn in_gameplay(state: Res<State<AppState>>) -> bool {
-    in_expected_state(state, AppState::Gameplay)
-}
-
-fn in_expected_state(state: Res<State<AppState>>, expected: AppState) -> bool {
-    if *state.current() == expected {
-        true
-    }
-    else {
-        false
-    }
+    common::in_expected_state(state, AppState::Gameplay)
 }
 
 fn setup_system(mut commands: Commands,
@@ -126,29 +90,6 @@ fn setup_system(mut commands: Commands,
         texture: asset_server.load("logo.png"),
         ..default()
     });
-}
-
-fn spawn_splashscreen_system(mut commands: Commands,
-                             asset_server: Res<AssetServer>) {
-    println!("Running setup splashscreen system");
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("logo.png"),
-        ..default()
-    });
-}
-
-fn change_color_system(time: Res<Time>, mut query: Query<&mut Sprite>, state: ResMut<State<AppState>>) {
-    println!("Running change color system in state: {:?}", state.current());
-    for mut sprite in &mut query {
-        sprite
-            .color
-            .set_b((time.elapsed_seconds() * 0.1).sin() + 2.0);
-    }
-}
-
-fn start_game_system(mut state: ResMut<State<AppState>>) {
-    println!("Running start game system in state: {:?}", state.current());
-    state.set(AppState::Gameplay).unwrap();
 }
 
 fn end_game_system(mut state: ResMut<State<AppState>>) {

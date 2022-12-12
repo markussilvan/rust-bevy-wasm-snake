@@ -1,6 +1,13 @@
-use bevy::prelude::Component;
+use bevy::prelude::{Component, Res, State};
 
 use rand::prelude::*;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum AppState {
+    SplashScreen,
+    Gameplay,
+    GameOver
+}
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
@@ -45,5 +52,14 @@ impl Position {
 impl std::fmt::Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+pub fn in_expected_state(state: Res<State<AppState>>, expected: AppState) -> bool {
+    if *state.current() == expected {
+        true
+    }
+    else {
+        false
     }
 }
