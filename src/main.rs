@@ -2,6 +2,7 @@
 
 use bevy::prelude::*;
 use bevy::app::AppExit;
+use iyes_loopless::prelude::*;
 
 mod snake;
 mod food;
@@ -23,31 +24,69 @@ const GRID_SIZE: f32 = 30.0;
 
 const WINDOW_WIDTH: f32 = GRID_WIDTH as f32 * GRID_SIZE;
 const WINDOW_HEIGHT: f32 = GRID_HEIGHT as f32 * GRID_SIZE;
-//#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-//enum AppState {
-//    SplashScreen,
-//    Gameplay,
-//}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum AppState {
+    SplashScreen,
+    Gameplay,
+    GameOver
+}
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup_system)
-        .add_startup_system(spawn_walls_system)
-        .add_startup_system(spawn_snake_system.after(setup_system))
-        .add_system_set(SystemSet::new()
-            .label("Inputs")
-            .with_system(exit_system)
-            .with_system(control_snake_system))
+        .add_system(exit_system)
+        .add_state(AppState::SplashScreen)
+        .add_fixed_timestep(
+            std::time::Duration::from_millis(3000),
+            "splashscreen_delay",
+        )
+        .add_fixed_timestep(
+            std::time::Duration::from_millis(300),
+            "splashscreen_effect_delay",
+        )
+        .add_fixed_timestep(
+            std::time::Duration::from_millis(5000),
+            "gameplay_food_spawn_delay",
+        )
+        .add_fixed_timestep(
+            std::time::Duration::from_millis(300),
+            "gameplay_move_delay",
+        )
         .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(bevy::time::FixedTimestep::step(0.3))
-                .with_system(wall_collision_detection_system)
-                .with_system(move_snake_system.after(control_snake_system)))
+            SystemSet::on_enter(AppState::SplashScreen)
+                .with_system(spawn_splashscreen_system))
+        .add_fixed_timestep_system(
+            "splashscreen_delay",
+            0,
+            start_game_system.run_if(in_splashscreen))
+        .add_fixed_timestep_system(
+            "splashscreen_effect_delay",
+            0,
+            change_color_system.run_if(in_splashscreen))
         .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(bevy::time::FixedTimestep::step(5.0))
-                .with_system(spawn_food_system))
+            SystemSet::on_enter(AppState::Gameplay)
+                .with_system(spawn_walls_system)
+                .with_system(spawn_snake_system))
+        .add_system_set(
+            SystemSet::on_update(AppState::Gameplay)
+                .with_system(control_snake_system))
+        .add_fixed_timestep_system(
+            "gameplay_move_delay",
+            0,
+            wall_collision_detection_system.run_if(in_gameplay))
+        .add_fixed_timestep_system(
+            "gameplay_move_delay",
+            0,
+            move_snake_system.run_if(in_gameplay))
+        .add_fixed_timestep_system(
+            "gameplay_food_spawn_delay",
+            0,
+            spawn_food_system.run_if(in_gameplay))
+        .add_system_set(
+            SystemSet::on_enter(AppState::GameOver)
+                .with_system(game_over_system))
         .run();
 }
 
@@ -57,9 +96,27 @@ fn convert_to_screen_coordinates(position: Position) -> (f32, f32) {
     (x, y)
 }
 
+fn in_splashscreen(state: Res<State<AppState>>) -> bool {
+    in_expected_state(state, AppState::SplashScreen)
+}
+
+fn in_gameplay(state: Res<State<AppState>>) -> bool {
+    in_expected_state(state, AppState::Gameplay)
+}
+
+fn in_expected_state(state: Res<State<AppState>>, expected: AppState) -> bool {
+    if *state.current() == expected {
+        true
+    }
+    else {
+        false
+    }
+}
+
 fn setup_system(mut commands: Commands,
                 asset_server: Res<AssetServer>,
                 mut windows: ResMut<Windows>) {
+    println!("Running setup system");
     let window = windows.get_primary_mut().unwrap();
     window.set_title("Snake".to_string());
     window.set_resizable(false);
@@ -71,7 +128,36 @@ fn setup_system(mut commands: Commands,
     });
 }
 
+fn spawn_splashscreen_system(mut commands: Commands,
+                             asset_server: Res<AssetServer>) {
+    println!("Running setup splashscreen system");
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("logo.png"),
+        ..default()
+    });
+}
+
+fn change_color_system(time: Res<Time>, mut query: Query<&mut Sprite>, state: ResMut<State<AppState>>) {
+    println!("Running change color system in state: {:?}", state.current());
+    for mut sprite in &mut query {
+        sprite
+            .color
+            .set_b((time.elapsed_seconds() * 0.1).sin() + 2.0);
+    }
+}
+
+fn start_game_system(mut state: ResMut<State<AppState>>) {
+    println!("Running start game system in state: {:?}", state.current());
+    state.set(AppState::Gameplay).unwrap();
+}
+
+fn end_game_system(mut state: ResMut<State<AppState>>) {
+    println!("Running end game system in state: {:?}", state.current());
+    state.set(AppState::GameOver).unwrap();
+}
+
 fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    println!("Running spawn walls system");
     for x in 0..GRID_WIDTH+1 {
         for y in [0, GRID_HEIGHT] {
             let position = Position::new(x as i32, y as i32);
@@ -105,6 +191,7 @@ fn spawn_wall(commands: &mut Commands, asset_server: &Res<AssetServer>, position
 }
 
 fn spawn_snake_system(mut commands: Commands) {
+    println!("Running spawn snake system");
     let position = Position::new(GRID_WIDTH as i32 / 2, GRID_HEIGHT as i32 / 2);
     commands
         .spawn(SpriteBundle {
@@ -174,13 +261,41 @@ fn spawn_food_system(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(position);
 }
 
-fn wall_collision_detection_system(snake_pos_q: Query<&Position, With<Snake>>) {
+fn wall_collision_detection_system(mut state: ResMut<State<AppState>>,
+                                   snake_pos_q: Query<&Position, With<Snake>>) {
     let snake_position = snake_pos_q.single();
 
     if (snake_position.x <= 0) || (snake_position.x >= GRID_WIDTH as i32) {
-        panic!(); //TODO
+        state.set(AppState::GameOver).unwrap();
     }
     if (snake_position.y <= 0) || (snake_position.y >= GRID_HEIGHT as i32) {
-        panic!();
+        state.set(AppState::GameOver).unwrap();
     }
 }
+
+fn game_over_system(mut commands: Commands,
+                    asset_server: Res<AssetServer>) {
+    commands.spawn((
+        TextBundle::from_section(
+            "Game over",
+            TextStyle {
+                font: asset_server.load("FiraSans-Bold.ttf"),
+                font_size: 100.0,
+                color: Color::BLACK,
+            }
+        )
+        .with_text_alignment(TextAlignment::CENTER)
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                bottom: Val::Percent(50.0),
+                right: Val::Px(250.0),
+                //bottom: Val::Percent(50.0),
+                //right: Val::Percent(25.0),
+                ..default()
+            },
+            ..default()
+        }),
+    ));
+}
+
