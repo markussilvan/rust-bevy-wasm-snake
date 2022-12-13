@@ -2,6 +2,13 @@ use bevy::prelude::{Component, Res, State};
 
 use rand::prelude::*;
 
+pub(crate) const GRID_WIDTH: u32 = 30;
+pub(crate) const GRID_HEIGHT: u32 = 20;
+pub(crate) const GRID_SIZE: f32 = 30.0;
+
+pub(crate) const WINDOW_WIDTH: f32 = GRID_WIDTH as f32 * GRID_SIZE;
+pub(crate) const WINDOW_HEIGHT: f32 = GRID_HEIGHT as f32 * GRID_SIZE;
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum AppState {
     SplashScreen,
@@ -24,10 +31,6 @@ pub struct Position {
 }
 
 impl Position {
-    pub fn default() -> Position {
-        Position { x: 0, y: 0 }
-    }
-
     pub fn new(x: i32, y: i32) -> Position {
         Position { x, y }
     }
@@ -62,4 +65,10 @@ pub fn in_expected_state(state: Res<State<AppState>>, expected: AppState) -> boo
     else {
         false
     }
+}
+
+pub fn convert_to_screen_coordinates(position: Position) -> (f32, f32) {
+    let x: f32 = position.x as f32 * GRID_SIZE - (WINDOW_WIDTH / 2.0);
+    let y: f32 = position.y as f32 * GRID_SIZE - (WINDOW_HEIGHT / 2.0);
+    (x, y)
 }
