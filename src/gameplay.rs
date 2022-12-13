@@ -16,6 +16,7 @@ impl GameplayPlugin {
     const SNAKE_Z_DEPTH: f32 = 100.0;
     const FOOD_Z_DEPTH: f32 = 50.0;
     const WALL_Z_DEPTH: f32 = 200.0;
+    const BACKGROUND_Z_DEPTH: f32 = 0.0;
 }
 
 impl Plugin for GameplayPlugin {
@@ -26,11 +27,12 @@ impl Plugin for GameplayPlugin {
                 "gameplay_food_spawn_delay",
             )
             .add_fixed_timestep(
-                std::time::Duration::from_millis(200),
+                std::time::Duration::from_millis(250),
                 "gameplay_move_delay",
             )
             .add_system_set(
                 SystemSet::on_enter(AppState::Gameplay)
+                    .with_system(spawn_background_system)
                     .with_system(spawn_walls_system)
                     .with_system(spawn_snake_system))
             .add_system_set(
@@ -53,6 +55,22 @@ impl Plugin for GameplayPlugin {
 
 fn in_gameplay(state: Res<State<AppState>>) -> bool {
     in_expected_state(state, AppState::Gameplay)
+}
+
+fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let scale_factor = crate::common::WINDOW_HEIGHT / 100.0;
+    //let (x, y) = convert_to_screen_coordinates(position);
+
+    commands.spawn(
+        SpriteBundle {
+            texture: asset_server.load("tile-background.png"),
+            transform: Transform {
+                scale: Vec3::new(scale_factor, scale_factor, 1.0),
+                translation: Vec3::new(0.0, 0.0, GameplayPlugin::BACKGROUND_Z_DEPTH),
+                ..default()
+            },
+            ..default()
+        });
 }
 
 fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {

@@ -58,7 +58,7 @@ fn game_over_system(mut commands: Commands,
             TextStyle {
                 font: asset_server.load("FiraSans-Bold.ttf"),
                 font_size: 100.0,
-                color: Color::BLACK,
+                color: Color::GRAY,
             }
         )
         .with_text_alignment(TextAlignment::CENTER)
@@ -67,8 +67,6 @@ fn game_over_system(mut commands: Commands,
             position: UiRect {
                 bottom: Val::Percent(50.0),
                 right: Val::Px(250.0),
-                //bottom: Val::Percent(50.0),
-                //right: Val::Percent(25.0),
                 ..default()
             },
             ..default()
