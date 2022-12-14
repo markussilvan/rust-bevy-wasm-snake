@@ -25,11 +25,13 @@ fn main() {
         .add_system_set(
             SystemSet::on_enter(AppState::GameOver)
                 .with_system(game_over_system))
+        .add_system_set(
+            SystemSet::on_exit(AppState::GameOver)
+                .with_system(despawn_game_over_system))
         .run();
 }
 
 fn setup_system(mut commands: Commands,
-                asset_server: Res<AssetServer>,
                 mut windows: ResMut<Windows>) {
     println!("Running setup system");
     let window = windows.get_primary_mut().unwrap();
@@ -37,10 +39,6 @@ fn setup_system(mut commands: Commands,
     window.set_resizable(false);
     window.set_resolution(WINDOW_WIDTH, WINDOW_HEIGHT);
     commands.spawn(Camera2dBundle::default());
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("logo.png"),
-        ..default()
-    });
 }
 
 fn exit_system(keyboard_input: Res<Input<KeyCode>>,
@@ -74,3 +72,12 @@ fn game_over_system(mut commands: Commands,
     ));
 }
 
+fn despawn_game_over_system(mut commands: Commands,
+                            query: Query<Entity>) {
+    // notice that Walls and BackgroundImage are not cleaned up
+    // GameOver system will cleanup everything
+    println!("Running despawn game over system");
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+}

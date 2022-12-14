@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
 use crate::common::AppState;
+use crate::common::BackgroundImage;
 use crate::common::in_expected_state;
 
 pub struct SplashScreenPlugin;
@@ -27,7 +28,10 @@ impl Plugin for SplashScreenPlugin {
             .add_fixed_timestep_system(
                 "splashscreen_effect_delay",
                 0,
-                change_color_system.run_if(in_splashscreen));
+                change_color_system.run_if(in_splashscreen))
+            .add_system_set(
+                SystemSet::on_exit(AppState::SplashScreen)
+                    .with_system(despawn_splashscreen_system));
     }
 }
 
@@ -40,8 +44,13 @@ fn spawn_splashscreen_system(mut commands: Commands,
     println!("Running setup splashscreen system");
     commands.spawn(SpriteBundle {
         texture: asset_server.load("logo.png"),
+        transform: Transform {
+            scale: Vec3::new(1.2, 1.2, 1.0),
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            ..default()
+        },
         ..default()
-    });
+    }).insert(BackgroundImage);
 }
 
 fn change_color_system(time: Res<Time>, mut query: Query<&mut Sprite>, state: ResMut<State<AppState>>) {
@@ -56,4 +65,11 @@ fn change_color_system(time: Res<Time>, mut query: Query<&mut Sprite>, state: Re
 fn start_game_system(mut state: ResMut<State<AppState>>) {
     println!("Running start game system in state: {:?}", state.current());
     state.set(AppState::Gameplay).unwrap();
+}
+
+fn despawn_splashscreen_system(mut commands: Commands,
+                               query: Query<Entity, With<BackgroundImage>>) {
+    println!("Running despawn splashscreen system");
+    let entity = query.single();
+    commands.entity(entity).despawn_recursive();
 }

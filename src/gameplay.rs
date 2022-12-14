@@ -4,6 +4,7 @@ use iyes_loopless::prelude::*;
 use crate::common::in_expected_state;
 use crate::common::convert_to_screen_coordinates;
 use crate::common::AppState;
+use crate::common::BackgroundImage;
 use crate::common::Position;
 use crate::common::{GRID_SIZE, GRID_WIDTH, GRID_HEIGHT};
 use crate::snake::Snake;
@@ -49,7 +50,10 @@ impl Plugin for GameplayPlugin {
             .add_fixed_timestep_system(
                 "gameplay_food_spawn_delay",
                 0,
-                spawn_food_system.run_if(in_gameplay));
+                spawn_food_system.run_if(in_gameplay))
+            .add_system_set(
+                SystemSet::on_exit(AppState::Gameplay)
+                    .with_system(despawn_gameplay_system));
     }
 }
 
@@ -58,8 +62,8 @@ fn in_gameplay(state: Res<State<AppState>>) -> bool {
 }
 
 fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    println!("Running spawn background system");
     let scale_factor = crate::common::WINDOW_HEIGHT / 100.0;
-    //let (x, y) = convert_to_screen_coordinates(position);
 
     commands.spawn(
         SpriteBundle {
@@ -70,7 +74,7 @@ fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer
                 ..default()
             },
             ..default()
-        });
+        }).insert(BackgroundImage);
 }
 
 fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -183,3 +187,12 @@ fn wall_collision_detection_system(mut state: ResMut<State<AppState>>,
     }
 }
 
+fn despawn_gameplay_system(mut commands: Commands,
+                               query: Query<Entity, Or<(&Food, &Snake)>>) {
+    // notice that Walls and BackgroundImage are not cleaned up
+    // GameOver system will cleanup everything
+    println!("Running despawn gameplay system");
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+}
