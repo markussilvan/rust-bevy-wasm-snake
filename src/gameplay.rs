@@ -48,6 +48,10 @@ impl Plugin for GameplayPlugin {
                 0,
                 move_snake_system.run_if(in_gameplay))
             .add_fixed_timestep_system(
+                "gameplay_move_delay",
+                0,
+                food_collision_system.run_if(in_gameplay))
+            .add_fixed_timestep_system(
                 "gameplay_food_spawn_delay",
                 0,
                 spawn_food_system.run_if(in_gameplay))
@@ -187,8 +191,21 @@ fn wall_collision_detection_system(mut state: ResMut<State<AppState>>,
     }
 }
 
+fn food_collision_system(mut commands: Commands,
+                         mut snake_query: Query<(&mut Snake, &Position), With<Snake>>,
+                         food_query: Query<(Entity, &Food, &Position), With<Food>>) {
+    let (mut snake, snake_position) = snake_query.single_mut();
+
+    for (entity, food, food_position) in food_query.iter() {
+        if snake_position == food_position {
+            snake.grow(food.value);
+            commands.entity(entity).despawn();
+        }
+    }
+}
+
 fn despawn_gameplay_system(mut commands: Commands,
-                               query: Query<Entity, Or<(&Food, &Snake)>>) {
+                           query: Query<Entity, Or<(&Food, &Snake)>>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
     println!("Running despawn gameplay system");

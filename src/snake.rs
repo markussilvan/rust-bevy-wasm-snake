@@ -5,6 +5,7 @@ use crate::common::Direction;
 #[derive(Component)]
 pub(crate) struct Snake {
     pub direction: Direction,
+    growth: u32,
 }
 
 impl Snake {
@@ -13,6 +14,7 @@ impl Snake {
     pub fn new() -> Self {
         Snake {
             direction: Direction::Left,
+            growth: 0,
         }
     }
 
@@ -20,6 +22,10 @@ impl Snake {
         if Snake::get_opposite_direction(direction) != self.direction {
             self.direction = direction;
         }
+    }
+
+    pub fn grow(&mut self, value: u32) {
+        self.growth += value;
     }
 
     fn get_opposite_direction(direction: Direction) -> Direction {
