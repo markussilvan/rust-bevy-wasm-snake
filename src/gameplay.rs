@@ -147,6 +147,10 @@ fn spawn_snake_system(mut commands: Commands) {
 fn control_snake_system(keyboard_input: Res<Input<KeyCode>>, mut q: Query<&mut SnakeHead>) {
     let mut snake = q.single_mut();
 
+    if snake.next_turn {
+        return;
+    }
+
     if keyboard_input.pressed(KeyCode::Left) {
         snake.turn(crate::common::Direction::Left);
     }
@@ -179,6 +183,7 @@ fn move_snake_system(mut head_q: Query<(&mut Position, &mut Transform, &mut Snak
     // move snake head
     head_position.move_position(snake.direction, 1);
     (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*head_position);
+    snake.next_turn = false;
 }
 
 fn grow_snake_system(mut commands: Commands,

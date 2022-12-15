@@ -16,6 +16,7 @@ impl SnakeBodyPiece {
 #[derive(Component)]
 pub(crate) struct SnakeHead {
     pub direction: Direction,
+    pub next_turn: bool,
     growth: u32,
     body: Vec<Entity>,
 }
@@ -26,6 +27,7 @@ impl SnakeHead {
     pub fn new() -> Self {
         SnakeHead {
             direction: Direction::Left,
+            next_turn: false,
             growth: 0,
             body: Vec::new(),
         }
@@ -34,6 +36,7 @@ impl SnakeHead {
     pub fn turn(&mut self, direction: Direction) {
         if SnakeHead::get_opposite_direction(direction) != self.direction {
             self.direction = direction;
+            self.next_turn = true;
         }
     }
 
