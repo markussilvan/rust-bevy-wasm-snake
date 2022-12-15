@@ -29,7 +29,7 @@ impl Plugin for GameplayPlugin {
                 "gameplay_food_spawn_delay",
             )
             .add_fixed_timestep(
-                std::time::Duration::from_millis(250),
+                std::time::Duration::from_millis(200),
                 "gameplay_move_delay",
             )
             .add_system_set(
@@ -209,11 +209,20 @@ fn grow_snake_system(mut commands: Commands,
     snake.add_body_piece(entity);
 }
 
-fn spawn_food_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let food = Food::default();
-    let position = Position::random(GRID_WIDTH, GRID_HEIGHT);
-    let (x, y) = convert_to_screen_coordinates(position);
+fn spawn_food_system(mut commands: Commands,
+                     asset_server: Res<AssetServer>,
+                     query: Query<&Position>) {
+    // find a free position
+    let mut position = Position::random(GRID_WIDTH, GRID_HEIGHT);
+    loop {
+        if query.iter().find_map(|p| if *p == position { Some(p) } else { None }) == None {
+            break;
+        }
+        position = Position::random(GRID_WIDTH, GRID_HEIGHT);
+    }
 
+    let food = Food::default();
+    let (x, y) = convert_to_screen_coordinates(position);
     println!("Spawning food at position: {}", position);
     commands.spawn(
         SpriteBundle {
@@ -241,7 +250,7 @@ fn wall_collision_system(mut state: ResMut<State<AppState>>,
 }
 
 fn food_collision_system(mut commands: Commands,
-                         mut snake_query: Query<(&mut SnakeHead, &Position), With<SnakeHead>>,
+                         mut snake_query: Query<(&mut SnakeHead, &Position)>,
                          food_query: Query<(Entity, &Food, &Position), With<Food>>) {
     let (mut snake, snake_position) = snake_query.single_mut();
 
