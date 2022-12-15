@@ -7,14 +7,15 @@ use crate::common::AppState;
 use crate::common::BackgroundImage;
 use crate::common::Position;
 use crate::common::{GRID_SIZE, GRID_WIDTH, GRID_HEIGHT};
-use crate::snake::Snake;
+use crate::snake::{SnakeHead, SnakeBodyPiece};
 use crate::wall::Wall;
 use crate::food::Food;
 
 pub struct GameplayPlugin;
 
 impl GameplayPlugin {
-    const SNAKE_Z_DEPTH: f32 = 100.0;
+    const SNAKE_HEAD_Z_DEPTH: f32 = 100.0;
+    const SNAKE_BODY_Z_DEPTH: f32 = 99.0;
     const FOOD_Z_DEPTH: f32 = 50.0;
     const WALL_Z_DEPTH: f32 = 200.0;
     const BACKGROUND_Z_DEPTH: f32 = 0.0;
@@ -42,15 +43,23 @@ impl Plugin for GameplayPlugin {
             .add_fixed_timestep_system(
                 "gameplay_move_delay",
                 0,
-                wall_collision_detection_system.run_if(in_gameplay))
+                wall_collision_system.run_if(in_gameplay))
             .add_fixed_timestep_system(
                 "gameplay_move_delay",
                 0,
-                move_snake_system.run_if(in_gameplay))
+                grow_snake_system.run_if(in_gameplay).after("move"))
+            .add_fixed_timestep_system(
+                "gameplay_move_delay",
+                0,
+                move_snake_system.run_if(in_gameplay).label("move"))
             .add_fixed_timestep_system(
                 "gameplay_move_delay",
                 0,
                 food_collision_system.run_if(in_gameplay))
+            .add_fixed_timestep_system(
+                "gameplay_move_delay",
+                0,
+                snake_body_collision_system.run_if(in_gameplay))
             .add_fixed_timestep_system(
                 "gameplay_food_spawn_delay",
                 0,
@@ -121,21 +130,21 @@ fn spawn_snake_system(mut commands: Commands) {
     commands
         .spawn(SpriteBundle {
             sprite: Sprite {
-                color: Snake::HEAD_COLOR,
+                color: SnakeHead::HEAD_COLOR,
                 ..default()
             },
             transform: Transform {
                 scale: Vec3::new(GRID_SIZE, GRID_SIZE, 1.0),
-                translation: Vec3::new(0.0, 0.0, GameplayPlugin::SNAKE_Z_DEPTH),
+                translation: Vec3::new(0.0, 0.0, GameplayPlugin::SNAKE_HEAD_Z_DEPTH),
                 ..default()
             },
             ..default()
         })
-        .insert(Snake::new())
+        .insert(SnakeHead::new())
         .insert(position);
 }
 
-fn control_snake_system(keyboard_input: Res<Input<KeyCode>>, mut q: Query<&mut Snake>) {
+fn control_snake_system(keyboard_input: Res<Input<KeyCode>>, mut q: Query<&mut SnakeHead>) {
     let mut snake = q.single_mut();
 
     if keyboard_input.pressed(KeyCode::Left) {
@@ -152,12 +161,52 @@ fn control_snake_system(keyboard_input: Res<Input<KeyCode>>, mut q: Query<&mut S
     }
 }
 
-fn move_snake_system(mut q: Query<(&mut Position, &mut Transform, &Snake)>) {
-    let (mut position, mut transform, snake) = q.single_mut();
-    position.move_position(snake.direction, 1);
-    println!("Snake position: {}", *position);
+// move last body piece where the head is (before the move)
+// move the head one step to current direction
+fn move_snake_system(mut head_q: Query<(&mut Position, &mut Transform, &mut SnakeHead)>,
+                     mut body_q: Query<(&mut Position, &mut Transform), (With<SnakeBodyPiece>, Without<SnakeHead>)>) {
+    let (mut head_position, mut transform, mut snake) = head_q.single_mut();
+    if let Some(entity) = snake.get_last_body_piece() {
+        println!("Got last body piece entity: {:?}", entity);
+        if let Ok((mut position, mut transform)) = body_q.get_mut(entity) {
+            println!("Got last body piece position: {}", *position);
+            *position = *head_position;
+            (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*position);
+            snake.move_last_body_piece_to_front();
+        }
+    }
 
-    (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*position);
+    // move snake head
+    head_position.move_position(snake.direction, 1);
+    (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*head_position);
+}
+
+fn grow_snake_system(mut commands: Commands,
+                     mut q: Query<(&mut SnakeHead, &Position)>) {
+    let (mut snake, position) = q.single_mut();
+    if !snake.can_grow() {
+        return;
+    }
+
+    println!("Spawning new snake body piece at position: {}", *position);
+    let (screen_x, screen_y) = convert_to_screen_coordinates(*position);
+    let entity = commands.spawn(
+        SpriteBundle {
+            sprite: Sprite {
+                color: SnakeBodyPiece::BODY_COLOR,
+                ..default()
+            },
+            transform: Transform {
+                scale: Vec3::new(GRID_SIZE, GRID_SIZE, 1.0),
+                translation: Vec3::new(screen_x, screen_y, GameplayPlugin::SNAKE_BODY_Z_DEPTH),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(*position)
+        .insert(SnakeBodyPiece::new())
+        .id();
+    snake.add_body_piece(entity);
 }
 
 fn spawn_food_system(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -179,8 +228,8 @@ fn spawn_food_system(mut commands: Commands, asset_server: Res<AssetServer>) {
         .insert(position);
 }
 
-fn wall_collision_detection_system(mut state: ResMut<State<AppState>>,
-                                   snake_pos_q: Query<&Position, With<Snake>>) {
+fn wall_collision_system(mut state: ResMut<State<AppState>>,
+                         snake_pos_q: Query<&Position, With<SnakeHead>>) {
     let snake_position = snake_pos_q.single();
 
     if (snake_position.x <= 0) || (snake_position.x >= GRID_WIDTH as i32) {
@@ -192,7 +241,7 @@ fn wall_collision_detection_system(mut state: ResMut<State<AppState>>,
 }
 
 fn food_collision_system(mut commands: Commands,
-                         mut snake_query: Query<(&mut Snake, &Position), With<Snake>>,
+                         mut snake_query: Query<(&mut SnakeHead, &Position), With<SnakeHead>>,
                          food_query: Query<(Entity, &Food, &Position), With<Food>>) {
     let (mut snake, snake_position) = snake_query.single_mut();
 
@@ -204,8 +253,21 @@ fn food_collision_system(mut commands: Commands,
     }
 }
 
+fn snake_body_collision_system(mut state: ResMut<State<AppState>>,
+                               snake_query: Query<(&SnakeHead, &Position), With<SnakeHead>>,
+                               body_query: Query<&Position, With<SnakeBodyPiece>>) {
+    let (snake, snake_position) = snake_query.single();
+    let mut next_position = snake_position.clone();
+    next_position.move_position(snake.direction, 1);
+    for body_position in body_query.iter() {
+        if next_position == *body_position {
+            state.set(AppState::GameOver).unwrap();
+        }
+    }
+}
+
 fn despawn_gameplay_system(mut commands: Commands,
-                           query: Query<Entity, Or<(&Food, &Snake)>>) {
+                           query: Query<Entity, Or<(&Food, &SnakeHead, &SnakeBodyPiece)>>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
     println!("Running despawn gameplay system");
