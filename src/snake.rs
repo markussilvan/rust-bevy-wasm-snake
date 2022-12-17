@@ -57,7 +57,7 @@ impl SnakeHead {
         if self.growth > 0 {
             self.growth -= 1;
         }
-        println!("Adding body piece: {:?}", entity);
+        debug!("Adding body piece: {:?}", entity);
         self.body.push(entity);
     }
 

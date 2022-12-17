@@ -41,7 +41,7 @@ fn in_splashscreen(state: Res<State<AppState>>) -> bool {
 
 fn spawn_splashscreen_system(mut commands: Commands,
                              asset_server: Res<AssetServer>) {
-    println!("Running setup splashscreen system");
+    debug!("Running setup splashscreen system");
     commands.spawn(SpriteBundle {
         texture: asset_server.load("logo.png"),
         transform: Transform {
@@ -54,7 +54,7 @@ fn spawn_splashscreen_system(mut commands: Commands,
 }
 
 fn change_color_system(time: Res<Time>, mut query: Query<&mut Sprite>, state: ResMut<State<AppState>>) {
-    println!("Running change color system in state: {:?}", state.current());
+    debug!("Running change color system in state: {:?}", state.current());
     for mut sprite in &mut query {
         sprite
             .color
@@ -63,13 +63,13 @@ fn change_color_system(time: Res<Time>, mut query: Query<&mut Sprite>, state: Re
 }
 
 fn start_game_system(mut state: ResMut<State<AppState>>) {
-    println!("Running start game system in state: {:?}", state.current());
+    debug!("Running start game system in state: {:?}", state.current());
     state.set(AppState::Gameplay).unwrap();
 }
 
 fn despawn_splashscreen_system(mut commands: Commands,
                                query: Query<Entity, With<BackgroundImage>>) {
-    println!("Running despawn splashscreen system");
+    debug!("Running despawn splashscreen system");
     let entity = query.single();
     commands.entity(entity).despawn_recursive();
 }

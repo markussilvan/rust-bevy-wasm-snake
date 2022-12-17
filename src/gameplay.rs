@@ -75,7 +75,7 @@ fn in_gameplay(state: Res<State<AppState>>) -> bool {
 }
 
 fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    println!("Running spawn background system");
+    debug!("Running spawn background system");
     let scale_factor = crate::common::WINDOW_HEIGHT / 100.0;
 
     commands.spawn(
@@ -91,7 +91,7 @@ fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer
 }
 
 fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    println!("Running spawn walls system");
+    debug!("Running spawn walls system");
     for x in 0..GRID_WIDTH+1 {
         for y in [0, GRID_HEIGHT] {
             let position = Position::new(x as i32, y as i32);
@@ -125,7 +125,7 @@ fn spawn_wall(commands: &mut Commands, asset_server: &Res<AssetServer>, position
 }
 
 fn spawn_snake_system(mut commands: Commands) {
-    println!("Running spawn snake system");
+    debug!("Running spawn snake system");
     let position = Position::new(GRID_WIDTH as i32 / 2, GRID_HEIGHT as i32 / 2);
     commands
         .spawn(SpriteBundle {
@@ -171,9 +171,7 @@ fn move_snake_system(mut head_q: Query<(&mut Position, &mut Transform, &mut Snak
                      mut body_q: Query<(&mut Position, &mut Transform), (With<SnakeBodyPiece>, Without<SnakeHead>)>) {
     let (mut head_position, mut transform, mut snake) = head_q.single_mut();
     if let Some(entity) = snake.get_last_body_piece() {
-        println!("Got last body piece entity: {:?}", entity);
         if let Ok((mut position, mut transform)) = body_q.get_mut(entity) {
-            println!("Got last body piece position: {}", *position);
             *position = *head_position;
             (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*position);
             snake.move_last_body_piece_to_front();
@@ -193,7 +191,7 @@ fn grow_snake_system(mut commands: Commands,
         return;
     }
 
-    println!("Spawning new snake body piece at position: {}", *position);
+    debug!("Spawning new snake body piece at position: {}", *position);
     let (screen_x, screen_y) = convert_to_screen_coordinates(*position);
     let entity = commands.spawn(
         SpriteBundle {
@@ -228,7 +226,7 @@ fn spawn_food_system(mut commands: Commands,
 
     let food = Food::default();
     let (x, y) = convert_to_screen_coordinates(position);
-    println!("Spawning food at position: {}", position);
+    debug!("Spawning food at position: {}", position);
     commands.spawn(
         SpriteBundle {
             texture: asset_server.load("apple.png"),
@@ -284,7 +282,7 @@ fn despawn_gameplay_system(mut commands: Commands,
                            query: Query<Entity, Or<(&Food, &SnakeHead, &SnakeBodyPiece)>>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
-    println!("Running despawn gameplay system");
+    debug!("Running despawn gameplay system");
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }

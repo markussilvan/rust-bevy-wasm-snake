@@ -1,8 +1,10 @@
 // Snake - main
 
+#[doc = include_str!("../README.md")]
+
 use bevy::prelude::*;
 use bevy::app::AppExit;
-//use iyes_loopless::prelude::*;
+use bevy::log::LogPlugin;
 
 mod snake;
 mod food;
@@ -16,7 +18,10 @@ use common::{WINDOW_WIDTH, WINDOW_HEIGHT};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(
+            LogPlugin {
+                filter: "error,wgpu_core=error,wgpu_hal=error,snake=debug".into(),
+                level: bevy::log::Level::DEBUG }))
         .add_startup_system(setup_system)
         .add_system(exit_system)
         .add_state(AppState::SplashScreen)
@@ -33,7 +38,7 @@ fn main() {
 
 fn setup_system(mut commands: Commands,
                 mut windows: ResMut<Windows>) {
-    println!("Running setup system");
+    debug!("Running setup system");
     let window = windows.get_primary_mut().unwrap();
     window.set_title("Snake".to_string());
     window.set_resizable(false);
@@ -76,7 +81,7 @@ fn despawn_game_over_system(mut commands: Commands,
                             query: Query<Entity>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
-    println!("Running despawn game over system");
+    debug!("Running despawn game over system");
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
