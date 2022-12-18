@@ -1,1 +1,5 @@
 target/
+issues/
+
+.dit-config
+.dit-gui-config

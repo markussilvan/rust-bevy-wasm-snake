@@ -59,7 +59,7 @@ impl Plugin for GameplayPlugin {
             .add_fixed_timestep_system(
                 "gameplay_move_delay",
                 0,
-                snake_body_collision_system.run_if(in_gameplay))
+                snake_body_collision_system.run_if(in_gameplay).after("move"))
             .add_fixed_timestep_system(
                 "gameplay_food_spawn_delay",
                 0,
@@ -76,7 +76,7 @@ fn in_gameplay(state: Res<State<AppState>>) -> bool {
 
 fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     debug!("Running spawn background system");
-    let scale_factor = crate::common::WINDOW_HEIGHT / 100.0;
+    let scale_factor = crate::common::WINDOW_HEIGHT / 99.0;
 
     commands.spawn(
         SpriteBundle {
@@ -107,12 +107,12 @@ fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn spawn_wall(commands: &mut Commands, asset_server: &Res<AssetServer>, position: Position) {
-    let scale_factor = GRID_SIZE / 70.0;
+    let scale_factor = 1.0;
     let (x, y) = convert_to_screen_coordinates(position);
 
     commands.spawn(
         SpriteBundle {
-            texture: asset_server.load("wall.png"),
+            texture: asset_server.load("brickwall.png"),
             transform: Transform {
                 scale: Vec3::new(scale_factor, scale_factor, 1.0),
                 translation: Vec3::new(x, y, GameplayPlugin::WALL_Z_DEPTH),
