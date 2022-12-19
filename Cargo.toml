@@ -6,9 +6,12 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.9.1", features = ["dynamic"] }
+bevy = "0.9.1"
 iyes_loopless = "0.9.1"
 rand = "0.8.5"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bevy = { version = "0.9.1", features = ["dynamic"] }
 
 [profile.dev]
 opt-level = 1
