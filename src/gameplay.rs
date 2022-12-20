@@ -80,7 +80,7 @@ fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer
 
     commands.spawn(
         SpriteBundle {
-            texture: asset_server.load("tile-background.png"),
+            texture: asset_server.load("background.png"),
             transform: Transform {
                 scale: Vec3::new(scale_factor, scale_factor, 1.0),
                 translation: Vec3::new(0.0, 0.0, GameplayPlugin::BACKGROUND_Z_DEPTH),
