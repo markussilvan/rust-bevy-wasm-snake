@@ -224,12 +224,12 @@ fn spawn_food_system(mut commands: Commands,
         position = Position::random(GRID_WIDTH, GRID_HEIGHT);
     }
 
-    let food = Food::default();
+    let food = Food::random();
     let (x, y) = convert_to_screen_coordinates(position);
     debug!("Spawning food at position: {}", position);
     commands.spawn(
         SpriteBundle {
-            texture: asset_server.load("apple.png"),
+            texture: asset_server.load(food.asset.as_str()),
             transform: Transform {
                 translation: Vec3::new(x, y, GameplayPlugin::FOOD_Z_DEPTH),
                 ..default()
