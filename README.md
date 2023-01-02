@@ -42,3 +42,4 @@ Dit issues are in a separate git repository.
   - Living tissue background: https://opengameart.org/content/living-tissue-background
   - snake logo: https://pixabay.com/users/openclipart-vectors-30363/
   - apple?
+  - Explosion by Cuzco

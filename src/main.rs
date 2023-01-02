@@ -8,6 +8,7 @@ use bevy::log::LogPlugin;
 
 mod snake;
 mod food;
+mod bomb;
 mod common;
 mod wall;
 mod splashscreen;

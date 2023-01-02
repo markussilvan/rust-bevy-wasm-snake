@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Res, State};
+use bevy::prelude::{Component, Res, State, Deref, DerefMut, Timer};
 
 use rand::prelude::*;
 
@@ -18,6 +18,9 @@ pub enum AppState {
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub struct BackgroundImage;
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(pub Timer);
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
