@@ -1,9 +1,10 @@
 use bevy::prelude::Component;
 use rand::prelude::*;
 
-const FOODS: [(&str, u32); 2] = [
-    ("apple.png", 1),
-    ("banana.png", 5)
+const FOODS: [(&str, u32); 3] = [
+    ("apple.png", 2),
+    ("banana.png", 5),
+    ("watermelon.png", 8),
 ];
 
 #[derive(Component)]
