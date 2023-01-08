@@ -2,16 +2,15 @@ use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
 use crate::common::in_expected_state;
-use crate::common::convert_to_screen_coordinates;
 use crate::common::AppState;
 use crate::common::BackgroundImage;
-use crate::common::GridPosition;
+use crate::common::{GridPosition, ScreenPosition};
 use crate::common::{GRID_SIZE, GRID_WIDTH, GRID_HEIGHT};
 use crate::common::AnimationTimer;
 use crate::snake::{SnakeHead, SnakeBodyPiece};
 use crate::wall::Wall;
 use crate::food::Food;
-use crate::bomb::Bomb;
+use crate::bomb::{Bomb, ParticleSystem, Particle};
 
 pub struct GameplayPlugin;
 
@@ -26,6 +25,7 @@ impl GameplayPlugin {
 
 impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
+        let particle_system = ParticleSystem::new();
         app
             .add_fixed_timestep(
                 std::time::Duration::from_millis(5000),
@@ -77,6 +77,10 @@ impl Plugin for GameplayPlugin {
                 0,
                 bomb_timer_system.run_if(in_gameplay).after("move"))
             .add_fixed_timestep_system(
+                "gameplay_move_delay",
+                0,
+                update_particles_system.run_if(in_gameplay).after("move"))
+            .add_fixed_timestep_system(
                 "gameplay_food_spawn_delay",
                 0,
                 spawn_food_system.run_if(in_gameplay))
@@ -86,7 +90,8 @@ impl Plugin for GameplayPlugin {
                 spawn_bomb_system.run_if(in_gameplay))
             .add_system_set(
                 SystemSet::on_exit(AppState::Gameplay)
-                    .with_system(despawn_gameplay_system));
+                    .with_system(despawn_gameplay_system))
+            .insert_resource(particle_system);
     }
 }
 
@@ -128,14 +133,14 @@ fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn spawn_wall(commands: &mut Commands, asset_server: &Res<AssetServer>, position: GridPosition) {
     let scale_factor = 1.0;
-    let (x, y) = convert_to_screen_coordinates(position);
+    let screen_pos = ScreenPosition::from(position);
 
     commands.spawn(
         SpriteBundle {
             texture: asset_server.load("brickwall.png"),
             transform: Transform {
                 scale: Vec3::new(scale_factor, scale_factor, 1.0),
-                translation: Vec3::new(x, y, GameplayPlugin::WALL_Z_DEPTH),
+                translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::WALL_Z_DEPTH),
                 ..default()
             },
             ..default()
@@ -193,14 +198,18 @@ fn move_snake_system(mut head_q: Query<(&mut GridPosition, &mut Transform, &mut 
     if let Some(entity) = snake.get_last_body_piece() {
         if let Ok((mut position, mut transform)) = body_q.get_mut(entity) {
             *position = *head_position;
-            (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*position);
+            let screen_pos = ScreenPosition::from(*position);
+            transform.translation.x = screen_pos.x;
+            transform.translation.y = screen_pos.y;
             snake.move_last_body_piece_to_front();
         }
     }
 
     // move snake head
     head_position.move_position(snake.direction, 1);
-    (transform.translation.x, transform.translation.y) = convert_to_screen_coordinates(*head_position);
+    let screen_pos = ScreenPosition::from(*head_position);
+    transform.translation.x = screen_pos.x;
+    transform.translation.y = screen_pos.y;
     snake.next_turn = false;
 }
 
@@ -212,7 +221,7 @@ fn grow_snake_system(mut commands: Commands,
     }
 
     debug!("Spawning new snake body piece at position: {}", *position);
-    let (screen_x, screen_y) = convert_to_screen_coordinates(*position);
+    let screen_pos = ScreenPosition::from(*position);
     let entity = commands.spawn(
         SpriteBundle {
             sprite: Sprite {
@@ -221,7 +230,10 @@ fn grow_snake_system(mut commands: Commands,
             },
             transform: Transform {
                 scale: Vec3::new(GRID_SIZE, GRID_SIZE, 1.0),
-                translation: Vec3::new(screen_x, screen_y, GameplayPlugin::SNAKE_BODY_Z_DEPTH),
+                translation: Vec3::new(
+                    screen_pos.x,
+                    screen_pos.y,
+                    GameplayPlugin::SNAKE_BODY_Z_DEPTH),
                 ..default()
             },
             ..default()
@@ -236,14 +248,14 @@ fn spawn_food_system(mut commands: Commands,
                      asset_server: Res<AssetServer>,
                      query: Query<&GridPosition>) {
     let position = find_free_position(query);
+    let screen_pos = ScreenPosition::from(position);
     let food = Food::random();
-    let (x, y) = convert_to_screen_coordinates(position);
     debug!("Spawning food at position: {}", position);
     commands.spawn(
         SpriteBundle {
             texture: asset_server.load(food.asset.as_str()),
             transform: Transform {
-                translation: Vec3::new(x, y, GameplayPlugin::FOOD_Z_DEPTH),
+                translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::FOOD_Z_DEPTH),
                 ..default()
             },
             ..default()
@@ -257,8 +269,8 @@ fn spawn_bomb_system(mut commands: Commands,
                      mut texture_atlases: ResMut<Assets<TextureAtlas>>,
                      query: Query<&GridPosition>) {
     let position = find_free_position(query);
+    let screen_pos = ScreenPosition::from(position);
     let bomb = Bomb::default();
-    let (x, y) = convert_to_screen_coordinates(position);
     let scale_factor = 3.0;
     debug!("Spawning a bomb at position: {}", position);
 
@@ -272,7 +284,7 @@ fn spawn_bomb_system(mut commands: Commands,
             texture_atlas: texture_atlas_handle,
             transform: Transform {
                 scale: Vec3::new(scale_factor, scale_factor, 1.0),
-                translation: Vec3::new(x, y, GameplayPlugin::BOMB_Z_DEPTH),
+                translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::BOMB_Z_DEPTH),
                 ..default()
             },
             ..default()
@@ -336,16 +348,23 @@ fn snake_body_collision_system(mut state: ResMut<State<AppState>>,
 }
 
 fn bomb_timer_system(mut commands: Commands,
+                     mut particle_system: ResMut<ParticleSystem>,
                      mut bomb_query: Query<(Entity, &mut Bomb, &GridPosition), With<Bomb>>,
                      time: Res<Time>) {
     for (entity, mut bomb, position) in bomb_query.iter_mut() {
         bomb.timer.tick(time.delta());
         if bomb.timer.finished() {
-            //TODO: spawn an explosion to the position
             debug!("Bomb exploded at position: {}", position);
+            particle_system.create_explosion(&mut commands, ScreenPosition::from(*position));
             commands.entity(entity).despawn();
         }
     }
+}
+
+fn update_particles_system(commands: Commands,
+                           query: Query<(Entity, &mut Particle, &mut Transform, &mut Sprite)>,
+                           mut particle_system: ResMut<ParticleSystem>) {
+    particle_system.update(commands, query);
 }
 
 fn sprite_animation_system(
@@ -363,6 +382,7 @@ fn sprite_animation_system(
 }
 
 fn despawn_gameplay_system(mut commands: Commands,
+                           mut particle_system: ResMut<ParticleSystem>,
                            query: Query<Entity, Or<(&Food, &SnakeHead, &SnakeBodyPiece, &Bomb)>>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
@@ -370,6 +390,7 @@ fn despawn_gameplay_system(mut commands: Commands,
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
+    particle_system.despawn_particles(commands);
 }
 
 fn find_free_position(query: Query<&GridPosition>) -> GridPosition {

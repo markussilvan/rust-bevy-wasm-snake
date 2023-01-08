@@ -30,6 +30,29 @@ pub enum Direction {
     Down
 }
 
+#[derive(Component, Clone, Copy)]
+pub struct ScreenPosition {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+impl From<GridPosition> for ScreenPosition {
+    fn from(position: GridPosition) -> Self {
+        ScreenPosition {
+            x: position.x as f32 * GRID_SIZE - (WINDOW_WIDTH / 2.0),
+            y: position.y as f32 * GRID_SIZE - (WINDOW_HEIGHT / 2.0),
+            z: 0.0,
+        }
+    }
+}
+
+impl std::fmt::Display for ScreenPosition {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {}, {})", self.x, self.y, self.z)
+    }
+}
+
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub struct GridPosition {
     pub x: u32,
@@ -71,10 +94,4 @@ pub fn in_expected_state(state: Res<State<AppState>>, expected: AppState) -> boo
     else {
         false
     }
-}
-
-pub fn convert_to_screen_coordinates(position: GridPosition) -> (f32, f32) {
-    let x: f32 = position.x as f32 * GRID_SIZE - (WINDOW_WIDTH / 2.0);
-    let y: f32 = position.y as f32 * GRID_SIZE - (WINDOW_HEIGHT / 2.0);
-    (x, y)
 }
