@@ -73,10 +73,38 @@ impl GridPosition {
 
     pub fn move_position(&mut self, direction: Direction, length: u32) {
         match direction {
-            Direction::Left => self.x -= length,
-            Direction::Right => self.x += length,
-            Direction::Up => self.y += length,
-            Direction::Down => self.y -= length,
+            Direction::Left => {
+                if self.x >= length {
+                    self.x -= length
+                }
+                else {
+                    self.x = 0;
+                }
+            },
+            Direction::Right => {
+                if self.x + length < GRID_WIDTH {
+                    self.x += length;
+                }
+                else {
+                    self.x = GRID_WIDTH;
+                }
+            },
+            Direction::Up => {
+                if self.y + length < GRID_HEIGHT {
+                    self.y += length;
+                }
+                else {
+                    self.x = GRID_WIDTH;
+                }
+            },
+            Direction::Down => {
+                if self.y >= length {
+                    self.y -= length;
+                }
+                else {
+                    self.y = 0;
+                }
+            },
         }
     }
 }
