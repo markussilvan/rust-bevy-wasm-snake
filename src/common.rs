@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Res, State, Deref, DerefMut, Timer};
+use bevy::prelude::{Component, Res, State, Deref, DerefMut, Timer, TimerMode};
 
 use rand::prelude::*;
 
@@ -21,6 +21,20 @@ pub struct BackgroundImage;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
+
+#[derive(Component, Deref, DerefMut, Default)]
+pub struct DeathTimer {
+    pub timer: Timer,
+}
+
+impl DeathTimer {
+    pub fn default() -> Self {
+        let seconds = 0.5;
+        Self {
+            timer: Timer::from_seconds(seconds, TimerMode::Once),
+        }
+    }
+}
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {

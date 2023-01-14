@@ -7,6 +7,7 @@ use crate::common::BackgroundImage;
 use crate::common::{GridPosition, ScreenPosition};
 use crate::common::{GRID_SIZE, GRID_WIDTH, GRID_HEIGHT};
 use crate::common::AnimationTimer;
+use crate::common::DeathTimer;
 use crate::snake::{SnakeHead, SnakeBodyPiece};
 use crate::wall::Wall;
 use crate::food::Food;
@@ -80,6 +81,10 @@ impl Plugin for GameplayPlugin {
                 "gameplay_move_delay",
                 0,
                 update_particles_system.run_if(in_gameplay).after("move"))
+            .add_fixed_timestep_system(
+                "gameplay_move_delay",
+                0,
+                death_delay_system.run_if(in_gameplay).after("move"))
             .add_fixed_timestep_system(
                 "gameplay_food_spawn_delay",
                 0,
@@ -349,6 +354,7 @@ fn snake_body_collision_system(mut state: ResMut<State<AppState>>,
 
 fn bomb_timer_system(mut commands: Commands,
                      mut particle_system: ResMut<ParticleSystem>,
+                     snake_query: Query<&GridPosition, Or<(&SnakeHead, &SnakeBodyPiece)>>,
                      mut bomb_query: Query<(Entity, &mut Bomb, &GridPosition), With<Bomb>>,
                      time: Res<Time>) {
     for (entity, mut bomb, position) in bomb_query.iter_mut() {
@@ -356,6 +362,7 @@ fn bomb_timer_system(mut commands: Commands,
         if bomb.timer.finished() {
             debug!("Bomb exploded at position: {}", position);
             particle_system.create_explosion(&mut commands, ScreenPosition::from(*position));
+            check_if_snake_exploded(&mut commands, &snake_query, position);
             commands.entity(entity).despawn();
         }
     }
@@ -381,6 +388,17 @@ fn sprite_animation_system(
     }
 }
 
+fn death_delay_system(mut state: ResMut<State<AppState>>,
+                      mut query: Query<&mut DeathTimer>,
+                      time: Res<Time>) {
+    for mut timer in &mut query {
+        timer.tick(time.delta());
+        if timer.finished() {
+            state.set(AppState::GameOver).unwrap();
+        }
+    }
+}
+
 fn despawn_gameplay_system(mut commands: Commands,
                            mut particle_system: ResMut<ParticleSystem>,
                            query: Query<Entity, Or<(&Food, &SnakeHead, &SnakeBodyPiece, &Bomb)>>) {
@@ -402,4 +420,23 @@ fn find_free_position(query: Query<&GridPosition>) -> GridPosition {
         position = GridPosition::random(GRID_WIDTH, GRID_HEIGHT);
     }
     position
+}
+
+fn check_if_snake_exploded(commands: &mut Commands,
+                           snake_query: &Query<&GridPosition, Or<(&SnakeHead, &SnakeBodyPiece)>>,
+                           bomb_position: &GridPosition) {
+    debug!("Checking if snake exploded...");
+    for snake_piece_position in snake_query.iter() {
+        debug!("Snake pos: {}, Bomb pos: {}", snake_piece_position, bomb_position);
+        if ((snake_piece_position.x as i32 - bomb_position.x as i32).abs() <= 1) &&
+            ((snake_piece_position.y as i32 - bomb_position.y as i32).abs() <= 1) {
+            debug!("Snake is in the explosion zone!");
+            commands.spawn(
+                SpriteBundle {
+                    ..default()
+                })
+                .insert(DeathTimer::default());
+            break;
+        }
+    }
 }

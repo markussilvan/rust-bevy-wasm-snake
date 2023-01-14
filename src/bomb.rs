@@ -20,7 +20,6 @@ impl Bomb {
 pub struct Particle {
     position: ScreenPosition,
     velocity: Vec2,
-    //TODO: direction: AngleDirection,
     size: f32,
     color: Color,
 }
