@@ -15,7 +15,10 @@ mod splashscreen;
 mod gameplay;
 
 use common::AppState;
+use common::in_expected_state;
 use common::{WINDOW_WIDTH, WINDOW_HEIGHT};
+use common::{BackgroundImage, Text};
+use wall::Wall;
 
 fn main() {
     App::new()
@@ -31,6 +34,9 @@ fn main() {
         .add_system_set(
             SystemSet::on_enter(AppState::GameOver)
                 .with_system(game_over_system))
+        .add_system_set(
+            SystemSet::on_update(AppState::GameOver)
+                .with_system(game_over_input_system))
         .add_system_set(
             SystemSet::on_exit(AppState::GameOver)
                 .with_system(despawn_game_over_system))
@@ -54,9 +60,18 @@ fn exit_system(keyboard_input: Res<Input<KeyCode>>,
     }
 }
 
+fn game_over_input_system(mut state: ResMut<State<AppState>>,
+                          keyboard_input: Res<Input<KeyCode>>) {
+    if in_expected_state(state.current(), AppState::GameOver) {
+        if keyboard_input.pressed(KeyCode::Space) {
+            state.set(AppState::Gameplay).unwrap();
+        }
+    }
+}
+
 fn game_over_system(mut commands: Commands,
                     asset_server: Res<AssetServer>) {
-    commands.spawn((
+    commands.spawn(
         TextBundle::from_section(
             "Game over",
             TextStyle {
@@ -75,13 +90,31 @@ fn game_over_system(mut commands: Commands,
             },
             ..default()
         }),
-    ));
+    ).insert(Text);
+    commands.spawn(
+        TextBundle::from_section(
+            "Press space to continue",
+            TextStyle {
+                font: asset_server.load("FiraSans-Bold.ttf"),
+                font_size: 45.0,
+                color: Color::GRAY,
+            }
+        )
+        .with_text_alignment(TextAlignment::CENTER)
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                bottom: Val::Percent(40.0),
+                right: Val::Px(250.0),
+                ..default()
+            },
+            ..default()
+        }),
+    ).insert(Text);
 }
 
 fn despawn_game_over_system(mut commands: Commands,
-                            query: Query<Entity>) {
-    // notice that Walls and BackgroundImage are not cleaned up
-    // GameOver system will cleanup everything
+                            query: Query<Entity, Or<(&Wall, &BackgroundImage, &Text)>>) {
     debug!("Running despawn game over system");
     for entity in query.iter() {
         commands.entity(entity).despawn();

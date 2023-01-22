@@ -1,5 +1,6 @@
 target/
 issues/
+out/
 
 .dit-config
 .dit-gui-config

@@ -19,6 +19,9 @@ pub enum AppState {
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
 pub struct BackgroundImage;
 
+#[derive(Component, Clone, Copy, PartialEq, Eq)]
+pub struct Text;
+
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
 
