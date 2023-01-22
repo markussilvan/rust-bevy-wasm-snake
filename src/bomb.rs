@@ -18,20 +18,27 @@ impl Bomb {
 
 #[derive(Component)]
 pub struct Particle {
-    position: ScreenPosition,
     velocity: Vec2,
     size: f32,
     color: Color,
 }
 
 impl Particle {
-    pub fn new(position: ScreenPosition, velocity: Vec2, size: f32, color: Color) -> Self {
+    pub fn new(velocity: Vec2, size: f32, color: Color) -> Self {
         Particle {
-            position,
             velocity,
             size,
             color,
         }
+    }
+
+    pub fn update(&mut self) {
+        let a = self.color.a();
+        self.color.set_a(0.9 * a);
+        let b = self.color.b();
+        self.color.set_b(1.2 * b);
+
+        self.size -= 5.0;
     }
 }
 
@@ -48,20 +55,20 @@ impl ParticleSystem {
     }
 
     pub fn create_explosion(&mut self, commands: &mut Commands, position: ScreenPosition) {
-        //TODO: create a nice particle pattern (that looks more "round")
+        let distance = 5.0;
         let velocities = [
             Vec2::new(0.0, 0.0),
-            Vec2::new(0.0, 5.0),
-            Vec2::new(0.0, -5.0),
-            Vec2::new(5.0, 0.0),
-            Vec2::new(5.0, 5.0),
-            Vec2::new(5.0, -5.0),
-            Vec2::new(-5.0, 0.0),
-            Vec2::new(-5.0, 5.0),
-            Vec2::new(-5.0, -5.0),
+            Vec2::new(0.0, distance),
+            Vec2::new(0.0, -distance),
+            Vec2::new(distance, 0.0),
+            Vec2::new(distance, distance),
+            Vec2::new(distance, -distance),
+            Vec2::new(-distance, 0.0),
+            Vec2::new(-distance, distance),
+            Vec2::new(-distance, -distance),
         ];
         let mut p = position.clone();
-        p.z = 400.0; //TODO
+        p.z = 400.0; //TODO: define this somewhere
         let size = 40.0;
         for vel in velocities {
             self.spawn_particle(commands, p, size, vel);
@@ -79,15 +86,13 @@ impl ParticleSystem {
                 continue;
             }
 
-            particle.size -= 5.0;
+            particle.update();
+
             transform.scale = Vec3::new(particle.size, particle.size, 1.0);
             transform.translation.x += particle.velocity.x;
             transform.translation.y += particle.velocity.y;
 
-            let a = sprite.color.a();
-            sprite.color.set_a(0.9 * a);
-            let b = sprite.color.b();
-            sprite.color.set_b(1.2 * b);
+            sprite.color = particle.color;
         }
     }
 
@@ -106,7 +111,7 @@ impl ParticleSystem {
         velocity: Vec2,
     ) {
         debug!("Spawning new particle to position {}", position);
-        let particle = Particle::new(position, velocity, size, Color::GOLD);
+        let particle = Particle::new(velocity, size, Color::GOLD);
         let entity = commands.spawn(
             SpriteBundle {
                 sprite: Sprite {

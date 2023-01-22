@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Res, State, Deref, DerefMut, Timer, TimerMode};
+use bevy::prelude::{Component, Deref, DerefMut, Timer, TimerMode};
 
 use rand::prelude::*;
 
@@ -129,8 +129,8 @@ impl std::fmt::Display for GridPosition {
     }
 }
 
-pub fn in_expected_state(state: Res<State<AppState>>, expected: AppState) -> bool {
-    if *state.current() == expected {
+pub fn in_expected_state(state: &AppState, expected: AppState) -> bool {
+    if *state == expected {
         true
     }
     else {

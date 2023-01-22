@@ -101,7 +101,7 @@ impl Plugin for GameplayPlugin {
 }
 
 fn in_gameplay(state: Res<State<AppState>>) -> bool {
-    in_expected_state(state, AppState::Gameplay)
+    in_expected_state(state.current(), AppState::Gameplay)
 }
 
 fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer>) {

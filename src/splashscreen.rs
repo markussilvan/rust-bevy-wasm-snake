@@ -36,7 +36,7 @@ impl Plugin for SplashScreenPlugin {
 }
 
 fn in_splashscreen(state: Res<State<AppState>>) -> bool {
-    in_expected_state(state, AppState::SplashScreen)
+    in_expected_state(state.current(), AppState::SplashScreen)
 }
 
 fn spawn_splashscreen_system(mut commands: Commands,
