@@ -1,34 +1,54 @@
 # Rust Bevy Wasm Snake Game
 
-A little project for learning Rust, to try out Bevy and compling
-to a Webassembly binary.
+A little project for learning Rust, to try out Bevy and WebAssemby.
 
 Bevy version 0.9 compatible.
 
 The game itself is just a basic snake game.
 
-## Building
+## Native build
 
 A simple `cargo build` is enough for the debug build.
 
 ## Webassembly build
 
-Run `cargo build --target wasm32-unknown-unknown` to compile
-the WebAssembly version of the game.
+The game can be built to WASM without any modifications.
 
-To compile the release version, run
-`cargo build --release --target wasm32-unknown-unknown` and
-`wasm-bindgen --out-dir ./out/ --target web ./target/`
+### Installation
+
+Install _wasm-bindgen_ with `cargo install wasm-bindgen-cli`.
+Install _Trunk_ with `cargo install trunk`.
+
+### Building
+
+Run `cargo build --target wasm32-unknown-unknown` to compile
+the WebAssembly version of the game. The release version can
+be compiled the same way by adding `--release` to the command.
 
 To test it locally, `cargo run --target wasm32-unknown-unknown`
 is enough start the web server that serves it.
+It has been configured in `.cargo/config.toml` that _wasm-server-runner_
+is then used to run the WASM version of the game.
+
+Build with _wasm-bindgen_ using
+`wasm-bindgen --out-dir ./out/ --target web target/wasm32-unknown-unknown/release/snake.wasm`.
+
+Trunk build can be done simply with `trunk build`.
+It requires an imput `index.html` and `index.scss` files.
+Those are included in the repository root.
+Trunk output files go to `dist/` subdirectory.
+
+Easy way to test it locally is to run a simple HTTP server
+from the `dist/` directory with `python3 -m http.server 8000`.
+Note, that to be able to access the assets, go to `dist/` and
+`ln -s ../assets assets`.
 
 ## Playing the Game
 
 Use arrow keys to control the snake.
 At any point press `Escape` to exit the game.
 
-On the wasm version you need to give it focus first (by clicking
+On the WASM version you need to give it focus first (by clicking
 it with the mouse).
 
 ## Issues
@@ -36,10 +56,10 @@ it with the mouse).
 Dit issue tracker is used to track what needs to be done.
 Dit issues are in a separate git repository.
 
-## Contributors
+## Contributions
 
-  - me, all the code, wall sprite
-  - Living tissue background: https://opengameart.org/content/living-tissue-background
-  - snake logo: https://pixabay.com/users/openclipart-vectors-30363/
-  - apple?
-  - Explosion by Cuzco
+Snake image shown in the beginning is from
+[OpenClipart-Vectors](https://pixabay.com/users/openclipart-vectors-30363/).
+
+Living tissue background image is from
+[Ansimuz](https://opengameart.org/content/living-tissue-background).
