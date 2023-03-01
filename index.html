@@ -1,7 +1,15 @@
-<html><head>
-    <link rel="stylesheet" href="/index-597d90855083f957.css">
-  
-<link rel="preload" href="/snake-143c522716430dd4_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-<link rel="modulepreload" href="/snake-143c522716430dd4.js"></head>
-<body>
-<script type="module">import init from '/snake-143c522716430dd4.js';init('/snake-143c522716430dd4_bg.wasm');</script></body></html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="index-597d90855083f957.css" />
+		<link rel="preload" href="snake-143c522716430dd4_bg.wasm" as="fetch" type="application/wasm" />
+		<link rel="modulepreload" href="snake-143c522716430dd4.js" />
+		<title>Rust Bevy WASM Snake Game</title>
+	</head>
+	<body>
+		<script type="module">
+			import init from './snake-143c522716430dd4.js';
+			init('snake-143c522716430dd4_bg.wasm');
+		</script>
+	</body>
+</html>
