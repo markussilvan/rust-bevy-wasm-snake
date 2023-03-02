@@ -1,4 +1,6 @@
 target/
+dist/
+out/
 issues/
 
 .dit-config
