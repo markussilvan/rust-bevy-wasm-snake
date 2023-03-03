@@ -6,6 +6,8 @@ Bevy version 0.9 compatible.
 
 The game itself is just a basic snake game.
 
+![Screenshot](screenshot.png)
+
 ## Native build
 
 A simple `cargo build` is enough for the debug build.

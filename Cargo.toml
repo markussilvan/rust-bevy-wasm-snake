@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = [ "Markus Silván <msilvan@iki.fi>" ]
 readme = "README.md"
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 bevy = "0.9.1"
