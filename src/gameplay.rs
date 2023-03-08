@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use iyes_loopless::prelude::*;
+use bevy::time::common_conditions::on_timer;
+use bevy::utils::Duration;
 
-use crate::common::in_expected_state;
 use crate::common::AppState;
 use crate::common::BackgroundImage;
 use crate::common::{GridPosition, ScreenPosition};
@@ -28,80 +28,46 @@ impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
         let particle_system = ParticleSystem::new();
         app
-            .add_fixed_timestep(
-                std::time::Duration::from_millis(5000),
-                "gameplay_food_spawn_delay",
-            )
-            .add_fixed_timestep(
-                std::time::Duration::from_millis(27000),
-                "gameplay_bomb_spawn_delay",
-            )
-            .add_fixed_timestep(
-                std::time::Duration::from_millis(200),
-                "gameplay_move_delay",
-            )
-            .add_system_set(
-                SystemSet::on_enter(AppState::Gameplay)
-                    .with_system(spawn_background_system)
-                    .with_system(spawn_walls_system)
-                    .with_system(spawn_snake_system))
-            .add_system_set(
-                SystemSet::on_update(AppState::Gameplay)
-                    .with_system(control_snake_system)
-                    .with_system(sprite_animation_system))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                wall_collision_system.run_if(in_gameplay))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                grow_snake_system.run_if(in_gameplay).after("move"))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                move_snake_system.run_if(in_gameplay).label("move"))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                food_collision_system.run_if(in_gameplay))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                bomb_collision_system.run_if(in_gameplay))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                snake_body_collision_system.run_if(in_gameplay).after("move"))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                bomb_timer_system.run_if(in_gameplay).after("move"))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                update_particles_system.run_if(in_gameplay).after("move"))
-            .add_fixed_timestep_system(
-                "gameplay_move_delay",
-                0,
-                death_delay_system.run_if(in_gameplay).after("move"))
-            .add_fixed_timestep_system(
-                "gameplay_food_spawn_delay",
-                0,
-                spawn_food_system.run_if(in_gameplay))
-            .add_fixed_timestep_system(
-                "gameplay_bomb_spawn_delay",
-                0,
-                spawn_bomb_system.run_if(in_gameplay))
-            .add_system_set(
-                SystemSet::on_exit(AppState::Gameplay)
-                    .with_system(despawn_gameplay_system))
+            .add_systems((spawn_background_system, spawn_walls_system, spawn_snake_system)
+                .in_schedule(OnEnter(AppState::Gameplay)))
+            .add_systems((control_snake_system, sprite_animation_system)
+                .in_set(OnUpdate(AppState::Gameplay)))
+            .add_system(wall_collision_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(grow_snake_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(move_snake_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(food_collision_system.after(move_snake_system)
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(bomb_collision_system.after(move_snake_system)
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(snake_body_collision_system.after(move_snake_system)
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(bomb_timer_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(update_particles_system.after(bomb_timer_system)
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(death_delay_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(200))))
+            .add_system(spawn_food_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(5000))))
+            .add_system(spawn_bomb_system
+                .in_set(OnUpdate(AppState::Gameplay))
+                .run_if(on_timer(Duration::from_millis(27000))))
+            .add_system(despawn_gameplay_system.in_schedule(OnExit(AppState::Gameplay)))
             .insert_resource(particle_system);
     }
-}
-
-fn in_gameplay(state: Res<State<AppState>>) -> bool {
-    in_expected_state(state.current(), AppState::Gameplay)
 }
 
 fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -199,6 +165,7 @@ fn control_snake_system(keyboard_input: Res<Input<KeyCode>>, mut q: Query<&mut S
 // move the head one step to current direction
 fn move_snake_system(mut head_q: Query<(&mut GridPosition, &mut Transform, &mut SnakeHead)>,
                      mut body_q: Query<(&mut GridPosition, &mut Transform), (With<SnakeBodyPiece>, Without<SnakeHead>)>) {
+    // the last body piece to the front
     let (mut head_position, mut transform, mut snake) = head_q.single_mut();
     if let Some(entity) = snake.get_last_body_piece() {
         if let Ok((mut position, mut transform)) = body_q.get_mut(entity) {
@@ -210,7 +177,7 @@ fn move_snake_system(mut head_q: Query<(&mut GridPosition, &mut Transform, &mut 
         }
     }
 
-    // move snake head
+    // move snake head one step forward
     head_position.move_position(snake.direction, 1);
     let screen_pos = ScreenPosition::from(*head_position);
     transform.translation.x = screen_pos.x;
@@ -300,15 +267,15 @@ fn spawn_bomb_system(mut commands: Commands,
     .insert(position);
 }
 
-fn wall_collision_system(mut state: ResMut<State<AppState>>,
+fn wall_collision_system(mut state: ResMut<NextState<AppState>>,
                          snake_pos_q: Query<&GridPosition, With<SnakeHead>>) {
     let snake_position = snake_pos_q.single();
 
     if (snake_position.x <= 0) || (snake_position.x >= GRID_WIDTH) {
-        state.set(AppState::GameOver).unwrap();
+        state.set(AppState::GameOver);
     }
     if (snake_position.y <= 0) || (snake_position.y >= GRID_HEIGHT) {
-        state.set(AppState::GameOver).unwrap();
+        state.set(AppState::GameOver);
     }
 }
 
@@ -333,13 +300,13 @@ fn bomb_collision_system(mut commands: Commands,
 
     for (entity, bomb_position) in bomb_query.iter() {
         if snake_position == bomb_position {
-            debug!("Despawning a bomb at position: {}", bomb_position);
+            debug!("Bomb eaten. Despawning a bomb at position: {}", bomb_position);
             commands.entity(entity).despawn();
         }
     }
 }
 
-fn snake_body_collision_system(mut state: ResMut<State<AppState>>,
+fn snake_body_collision_system(mut state: ResMut<NextState<AppState>>,
                                snake_query: Query<(&SnakeHead, &GridPosition), With<SnakeHead>>,
                                body_query: Query<&GridPosition, With<SnakeBodyPiece>>) {
     let (snake, snake_position) = snake_query.single();
@@ -347,7 +314,7 @@ fn snake_body_collision_system(mut state: ResMut<State<AppState>>,
     next_position.move_position(snake.direction, 1);
     for body_position in body_query.iter() {
         if next_position == *body_position {
-            state.set(AppState::GameOver).unwrap();
+            state.set(AppState::GameOver);
         }
     }
 }
@@ -388,13 +355,15 @@ fn sprite_animation_system(
     }
 }
 
-fn death_delay_system(mut state: ResMut<State<AppState>>,
+// when a bomb is exploding, and snake is next to it,
+// wait a while and show the effect on the screen before ending the game
+fn death_delay_system(mut state: ResMut<NextState<AppState>>,
                       mut query: Query<&mut DeathTimer>,
                       time: Res<Time>) {
     for mut timer in &mut query {
         timer.tick(time.delta());
         if timer.finished() {
-            state.set(AppState::GameOver).unwrap();
+            state.set(AppState::GameOver);
         }
     }
 }
@@ -411,6 +380,8 @@ fn despawn_gameplay_system(mut commands: Commands,
     particle_system.despawn_particles(commands);
 }
 
+// a bad way of finding a free position from the grid
+// by randomly testing for a free positions
 fn find_free_position(query: Query<&GridPosition>) -> GridPosition {
     let mut position = GridPosition::random(GRID_WIDTH, GRID_HEIGHT);
     loop {

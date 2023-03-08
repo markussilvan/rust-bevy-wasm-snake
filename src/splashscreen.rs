@@ -1,34 +1,21 @@
 use bevy::prelude::*;
-use iyes_loopless::prelude::*;
+use bevy::time::common_conditions::on_timer;
+use bevy::utils::Duration;
 
 use crate::common::AppState;
 use crate::common::BackgroundImage;
-use crate::common::in_expected_state;
 
 pub struct SplashScreenPlugin;
 
 impl Plugin for SplashScreenPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_fixed_timestep(
-                std::time::Duration::from_millis(3000),
-                "splashscreen_delay",
-            )
-            .add_system_set(
-                SystemSet::on_enter(AppState::SplashScreen)
-                    .with_system(spawn_splashscreen_system))
-            .add_fixed_timestep_system(
-                "splashscreen_delay",
-                0,
-                start_game_system.run_if(in_splashscreen))
-            .add_system_set(
-                SystemSet::on_exit(AppState::SplashScreen)
-                    .with_system(despawn_splashscreen_system));
+            .add_system(spawn_splashscreen_system.in_schedule(OnEnter(AppState::SplashScreen)))
+            .add_system(start_game_system
+                .in_set(OnUpdate(AppState::SplashScreen))
+                .run_if(on_timer(Duration::from_millis(3000))))
+            .add_system(despawn_splashscreen_system.in_schedule(OnExit(AppState::SplashScreen)));
     }
-}
-
-fn in_splashscreen(state: Res<State<AppState>>) -> bool {
-    in_expected_state(state.current(), AppState::SplashScreen)
 }
 
 fn spawn_splashscreen_system(mut commands: Commands,
@@ -46,9 +33,9 @@ fn spawn_splashscreen_system(mut commands: Commands,
     }).insert(BackgroundImage);
 }
 
-fn start_game_system(mut state: ResMut<State<AppState>>) {
-    debug!("Running start game system in state: {:?}", state.current());
-    state.set(AppState::Gameplay).unwrap();
+fn start_game_system(mut state: ResMut<NextState<AppState>>) {
+    debug!("Running start game system");
+    state.set(AppState::Gameplay);
 }
 
 fn despawn_splashscreen_system(mut commands: Commands,

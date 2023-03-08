@@ -5,6 +5,7 @@
 use bevy::prelude::*;
 use bevy::app::AppExit;
 use bevy::log::LogPlugin;
+use bevy::window::PrimaryWindow;
 
 mod snake;
 mod food;
@@ -15,41 +16,45 @@ mod splashscreen;
 mod gameplay;
 
 use common::AppState;
-use common::in_expected_state;
 use common::{WINDOW_WIDTH, WINDOW_HEIGHT};
 use common::{BackgroundImage, Text};
 use wall::Wall;
 
 fn main() {
     App::new()
+        .add_state::<AppState>()
         .add_plugins(DefaultPlugins.set(
             LogPlugin {
                 filter: "error,wgpu_core=error,wgpu_hal=error,snake=debug".into(),
-                level: bevy::log::Level::DEBUG }))
-        .add_startup_system(setup_system)
-        .add_system(exit_system)
-        .add_state(AppState::SplashScreen)
+                level: bevy::log::Level::DEBUG
+            }).set(
+                WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Snake".into(),
+                        resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
+                        fit_canvas_to_parent: true,
+                        ..default()
+                    }),
+                    ..default()
+                })
+            )
         .add_plugin(splashscreen::SplashScreenPlugin)
         .add_plugin(gameplay::GameplayPlugin)
-        .add_system_set(
-            SystemSet::on_enter(AppState::GameOver)
-                .with_system(game_over_system))
-        .add_system_set(
-            SystemSet::on_update(AppState::GameOver)
-                .with_system(game_over_input_system))
-        .add_system_set(
-            SystemSet::on_exit(AppState::GameOver)
-                .with_system(despawn_game_over_system))
+        .add_startup_system(setup_system)
+        .add_system(exit_system)
+        .add_system(game_over_system.in_schedule(OnEnter(AppState::GameOver)))
+        .add_system(game_over_input_system.in_set(OnUpdate(AppState::GameOver)))
+        .add_system(despawn_game_over_system.in_schedule(OnExit(AppState::GameOver)))
         .run();
 }
 
 fn setup_system(mut commands: Commands,
-                mut windows: ResMut<Windows>) {
+                mut primary_query: Query<&mut Window, With<PrimaryWindow>>) {
     debug!("Running setup system");
-    let window = windows.get_primary_mut().unwrap();
-    window.set_title("Snake".to_string());
-    window.set_resizable(false);
-    window.set_resolution(WINDOW_WIDTH, WINDOW_HEIGHT);
+    let mut window = primary_query.single_mut();
+    window.title = "Snake".to_string();
+    window.resizable = false;
+    window.resolution = (WINDOW_WIDTH, WINDOW_HEIGHT).into();
     commands.spawn(Camera2dBundle::default());
 }
 
@@ -60,12 +65,10 @@ fn exit_system(keyboard_input: Res<Input<KeyCode>>,
     }
 }
 
-fn game_over_input_system(mut state: ResMut<State<AppState>>,
+fn game_over_input_system(mut state: ResMut<NextState<AppState>>,
                           keyboard_input: Res<Input<KeyCode>>) {
-    if in_expected_state(state.current(), AppState::GameOver) {
-        if keyboard_input.pressed(KeyCode::Space) {
-            state.set(AppState::Gameplay).unwrap();
-        }
+    if keyboard_input.pressed(KeyCode::Space) {
+        state.set(AppState::Gameplay);
     }
 }
 
@@ -80,7 +83,7 @@ fn game_over_system(mut commands: Commands,
                 color: Color::GRAY,
             }
         )
-        .with_text_alignment(TextAlignment::CENTER)
+        .with_text_alignment(TextAlignment::Center)
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
@@ -100,7 +103,7 @@ fn game_over_system(mut commands: Commands,
                 color: Color::GRAY,
             }
         )
-        .with_text_alignment(TextAlignment::CENTER)
+        .with_text_alignment(TextAlignment::Center)
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {

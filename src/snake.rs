@@ -58,7 +58,7 @@ impl SnakeHead {
             self.growth -= 1;
         }
         debug!("Adding body piece: {:?}", entity);
-        self.body.push(entity);
+        self.body.insert(0, entity);
     }
 
     pub fn get_last_body_piece(&self) -> Option<Entity> {

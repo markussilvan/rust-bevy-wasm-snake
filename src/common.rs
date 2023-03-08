@@ -1,4 +1,4 @@
-use bevy::prelude::{Component, Deref, DerefMut, Timer, TimerMode};
+use bevy::prelude::{Component, Deref, DerefMut, Timer, TimerMode, States};
 
 use rand::prelude::*;
 
@@ -9,11 +9,17 @@ pub(crate) const GRID_SIZE: f32 = 30.0;
 pub(crate) const WINDOW_WIDTH: f32 = GRID_WIDTH as f32 * GRID_SIZE;
 pub(crate) const WINDOW_HEIGHT: f32 = GRID_HEIGHT as f32 * GRID_SIZE;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, States)]
 pub enum AppState {
     SplashScreen,
     Gameplay,
     GameOver
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self::SplashScreen
+    }
 }
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
@@ -129,14 +135,5 @@ impl GridPosition {
 impl std::fmt::Display for GridPosition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
-    }
-}
-
-pub fn in_expected_state(state: &AppState, expected: AppState) -> bool {
-    if *state == expected {
-        true
-    }
-    else {
-        false
     }
 }
