@@ -2,7 +2,7 @@
 
 A little project for learning Rust, to try out Bevy and WebAssemby.
 
-Bevy version 0.9 compatible.
+Bevy version 0.10 compatible.
 
 The game itself is just a basic snake game.
 
@@ -57,6 +57,20 @@ it with the mouse).
 
 Dit issue tracker is used to track what needs to be done.
 Dit issues are in a separate git repository.
+
+## Focus on an element on document load
+
+How to set focus to the WASM game when the web page is loaded?
+
+First give and `id` to the WASM game element. The `div` or whatever it is.
+Then add this script to the template. Change the element id to match.
+
+```
+window.addEventListener('load', function() {
+  var input = document.getElementById('myInput');
+  input.focus();
+});
+```
 
 ## Contributions
 
