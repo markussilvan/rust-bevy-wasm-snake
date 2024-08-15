@@ -1,10 +1,11 @@
 # Rust Bevy Wasm Snake Game
 
-A little project for learning Rust, to try out Bevy and WebAssemby.
+A little project for learning Rust, to try out Bevy and WebAssembly.
 
 Bevy version 0.10 compatible.
 
-The game itself is just a basic snake game.
+The game itself is just a basic snake game. You can try it
+[here on github](https://markussilvan.github.io/rust-bevy-wasm-snake/).
 
 ![Screenshot](screenshot.png)
 
