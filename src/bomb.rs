@@ -10,7 +10,7 @@ pub(crate) struct Bomb {
 
 impl Bomb {
     pub fn default() -> Bomb {
-        let seconds = 5.0;
+        let seconds = 10.0;
         Bomb {
             timer: Timer::from_seconds(seconds, TimerMode::Once),
         }

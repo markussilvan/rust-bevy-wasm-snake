@@ -51,14 +51,12 @@ impl Plugin for GameplayPlugin {
                 .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
             .add_systems(Update, bomb_timer_system
-                .run_if(in_state(AppState::Gameplay))
-                .run_if(on_timer(Duration::from_millis(200))))
+                .run_if(in_state(AppState::Gameplay)))
             .add_systems(Update, update_particles_system.after(bomb_timer_system)
                 .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
             .add_systems(Update, death_delay_system
-                .run_if(in_state(AppState::Gameplay))
-                .run_if(on_timer(Duration::from_millis(200))))
+                .run_if(in_state(AppState::Gameplay)))
             .add_systems(Update, spawn_food_system
                 .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(5000))))
@@ -358,7 +356,7 @@ fn death_delay_system(mut state: ResMut<NextState<AppState>>,
 
 fn despawn_gameplay_system(mut commands: Commands,
                            mut particle_system: ResMut<ParticleSystem>,
-                           query: Query<Entity, Or<(With<Food>, With<SnakeHead>, With<SnakeBodyPiece>, With<Bomb>)>>) {
+                           query: Query<Entity, Or<(With<Food>, With<SnakeHead>, With<SnakeBodyPiece>, With<Bomb>, With<DeathTimer>)>>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
     debug!("Running despawn gameplay system");

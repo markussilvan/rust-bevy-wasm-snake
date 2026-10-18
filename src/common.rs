@@ -38,7 +38,7 @@ pub struct DeathTimer {
 
 impl DeathTimer {
     pub fn default() -> Self {
-        let seconds = 0.5;
+        let seconds = 1.0;
         Self {
             timer: Timer::from_seconds(seconds, TimerMode::Once),
         }
