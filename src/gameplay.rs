@@ -225,7 +225,7 @@ fn spawn_food_system(mut commands: Commands,
     debug!("Spawning food at position: {}", position);
     commands.spawn(
         SpriteBundle {
-            texture: asset_server.load(food.asset.as_str()),
+            texture: asset_server.load(food.asset.clone()),
             transform: Transform {
                 translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::FOOD_Z_DEPTH),
                 ..default()
