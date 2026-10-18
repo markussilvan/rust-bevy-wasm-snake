@@ -313,7 +313,7 @@ fn bomb_timer_system(mut commands: Commands,
                      time: Res<Time>) {
     for (entity, mut bomb, position) in bomb_query.iter_mut() {
         bomb.timer.tick(time.delta());
-        if bomb.timer.finished() {
+        if bomb.timer.is_finished() {
             debug!("Bomb exploded at position: {}", position);
             particle_system.create_explosion(&mut commands, ScreenPosition::from(*position));
             check_if_snake_exploded(&mut commands, &snake_query, position);
@@ -350,7 +350,7 @@ fn death_delay_system(mut state: ResMut<NextState<AppState>>,
                       time: Res<Time>) {
     for mut timer in &mut query {
         timer.tick(time.delta());
-        if timer.finished() {
+        if timer.is_finished() {
             state.set(AppState::GameOver);
         }
     }

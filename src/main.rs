@@ -32,7 +32,7 @@ fn main() {
                 WindowPlugin {
                     primary_window: Some(Window {
                         title: "Snake".into(),
-                        resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
+                        resolution: (WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32).into(),
                         ..default()
                     }),
                     ..default()
@@ -54,12 +54,12 @@ fn setup_system(mut commands: Commands,
     let Ok(mut window) = primary_query.single_mut() else { return };
     window.title = "Snake".to_string();
     window.resizable = false;
-    window.resolution = (WINDOW_WIDTH, WINDOW_HEIGHT).into();
+    window.resolution = (WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32).into();
     commands.spawn(Camera2d);
 }
 
 fn exit_system(keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut exit: EventWriter<AppExit>) {
+    mut exit: MessageWriter<AppExit>) {
     if keyboard_input.pressed(KeyCode::Escape) {
         exit.write(AppExit::Success);
     }
@@ -82,7 +82,7 @@ fn game_over_system(mut commands: Commands,
             ..default()
         },
         TextColor(GRAY.into()),
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(Justify::Center),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(50.0),
@@ -99,7 +99,7 @@ fn game_over_system(mut commands: Commands,
             ..default()
         },
         TextColor(GRAY.into()),
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(Justify::Center),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(40.0),
