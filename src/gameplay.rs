@@ -140,23 +140,23 @@ fn spawn_snake_system(mut commands: Commands) {
         .insert(position);
 }
 
-fn control_snake_system(keyboard_input: Res<Input<KeyCode>>, mut q: Query<&mut SnakeHead>) {
+fn control_snake_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut q: Query<&mut SnakeHead>) {
     let mut snake = q.single_mut();
 
     if snake.next_turn {
         return;
     }
 
-    if keyboard_input.pressed(KeyCode::Left) {
+    if keyboard_input.pressed(KeyCode::ArrowLeft) {
         snake.turn(crate::common::Direction::Left);
     }
-    else if keyboard_input.pressed(KeyCode::Right) {
+    else if keyboard_input.pressed(KeyCode::ArrowRight) {
         snake.turn(crate::common::Direction::Right);
     }
-    else if keyboard_input.pressed(KeyCode::Down) {
+    else if keyboard_input.pressed(KeyCode::ArrowDown) {
         snake.turn(crate::common::Direction::Down);
     }
-    else if keyboard_input.pressed(KeyCode::Up) {
+    else if keyboard_input.pressed(KeyCode::ArrowUp) {
         snake.turn(crate::common::Direction::Up);
     }
 }
@@ -238,7 +238,7 @@ fn spawn_food_system(mut commands: Commands,
 
 fn spawn_bomb_system(mut commands: Commands,
                      asset_server: Res<AssetServer>,
-                     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+                     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
                      query: Query<&GridPosition>) {
     let position = find_free_position(query);
     let screen_pos = ScreenPosition::from(position);
@@ -247,13 +247,16 @@ fn spawn_bomb_system(mut commands: Commands,
     debug!("Spawning a bomb at position: {}", position);
 
     let texture_handle = asset_server.load("bomb_spritesheet.png");
-    let texture_atlas = TextureAtlas::from_grid(
-        texture_handle,
+    let layout = TextureAtlasLayout::from_grid(
         Vec2::new(30.0, 30.0), 4, 1, None, None);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let layout_handle = texture_atlas_layouts.add(layout);
     commands.spawn((
         SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
+            texture: texture_handle,
+            atlas: TextureAtlas {
+                layout: layout_handle,
+                index: 0,
+            },
             transform: Transform {
                 scale: Vec3::new(scale_factor, scale_factor, 1.0),
                 translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::BOMB_Z_DEPTH),
@@ -321,7 +324,7 @@ fn snake_body_collision_system(mut state: ResMut<NextState<AppState>>,
 
 fn bomb_timer_system(mut commands: Commands,
                      mut particle_system: ResMut<ParticleSystem>,
-                     snake_query: Query<&GridPosition, Or<(&SnakeHead, &SnakeBodyPiece)>>,
+                     snake_query: Query<&GridPosition, Or<(With<SnakeHead>, With<SnakeBodyPiece>)>>,
                      mut bomb_query: Query<(Entity, &mut Bomb, &GridPosition), With<Bomb>>,
                      time: Res<Time>) {
     for (entity, mut bomb, position) in bomb_query.iter_mut() {
@@ -343,14 +346,14 @@ fn update_particles_system(commands: Commands,
 
 fn sprite_animation_system(
     time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
+    texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
+    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle) in &mut query {
+    for (mut timer, mut atlas) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
+            let layout = texture_atlas_layouts.get(&atlas.layout).unwrap();
+            atlas.index = (atlas.index + 1) % layout.textures.len();
         }
     }
 }
@@ -370,7 +373,7 @@ fn death_delay_system(mut state: ResMut<NextState<AppState>>,
 
 fn despawn_gameplay_system(mut commands: Commands,
                            mut particle_system: ResMut<ParticleSystem>,
-                           query: Query<Entity, Or<(&Food, &SnakeHead, &SnakeBodyPiece, &Bomb)>>) {
+                           query: Query<Entity, Or<(With<Food>, With<SnakeHead>, With<SnakeBodyPiece>, With<Bomb>)>>) {
     // notice that Walls and BackgroundImage are not cleaned up
     // GameOver system will cleanup everything
     debug!("Running despawn gameplay system");
@@ -394,7 +397,7 @@ fn find_free_position(query: Query<&GridPosition>) -> GridPosition {
 }
 
 fn check_if_snake_exploded(commands: &mut Commands,
-                           snake_query: &Query<&GridPosition, Or<(&SnakeHead, &SnakeBodyPiece)>>,
+                           snake_query: &Query<&GridPosition, Or<(With<SnakeHead>, With<SnakeBodyPiece>)>>,
                            bomb_position: &GridPosition) {
     debug!("Checking if snake exploded...");
     for snake_piece_position in snake_query.iter() {

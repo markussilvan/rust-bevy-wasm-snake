@@ -22,17 +22,17 @@ use wall::Wall;
 
 fn main() {
     App::new()
-        .add_state::<AppState>()
+        .init_state::<AppState>()
         .add_plugins(DefaultPlugins.set(
             LogPlugin {
                 filter: "error,wgpu_core=error,wgpu_hal=error,snake=debug".into(),
-                level: bevy::log::Level::DEBUG
+                level: bevy::log::Level::DEBUG,
+                ..default()
             }).set(
                 WindowPlugin {
                     primary_window: Some(Window {
                         title: "Snake".into(),
                         resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
-                        fit_canvas_to_parent: true,
                         ..default()
                     }),
                     ..default()
@@ -57,7 +57,7 @@ fn setup_system(mut commands: Commands,
     commands.spawn(Camera2dBundle::default());
 }
 
-fn exit_system(keyboard_input: Res<Input<KeyCode>>,
+fn exit_system(keyboard_input: Res<ButtonInput<KeyCode>>,
     mut exit: EventWriter<AppExit>) {
     if keyboard_input.pressed(KeyCode::Escape) {
         exit.send(AppExit);
@@ -65,7 +65,7 @@ fn exit_system(keyboard_input: Res<Input<KeyCode>>,
 }
 
 fn game_over_input_system(mut state: ResMut<NextState<AppState>>,
-                          keyboard_input: Res<Input<KeyCode>>) {
+                          keyboard_input: Res<ButtonInput<KeyCode>>) {
     if keyboard_input.pressed(KeyCode::Space) {
         state.set(AppState::Gameplay);
     }
@@ -82,7 +82,7 @@ fn game_over_system(mut commands: Commands,
                 color: Color::GRAY,
             }
         )
-        .with_text_alignment(TextAlignment::Center)
+        .with_text_justify(JustifyText::Center)
         .with_style(Style {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(50.0),
@@ -99,7 +99,7 @@ fn game_over_system(mut commands: Commands,
                 color: Color::GRAY,
             }
         )
-        .with_text_alignment(TextAlignment::Center)
+        .with_text_justify(JustifyText::Center)
         .with_style(Style {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(40.0),
@@ -110,7 +110,7 @@ fn game_over_system(mut commands: Commands,
 }
 
 fn despawn_game_over_system(mut commands: Commands,
-                            query: Query<Entity, Or<(&Wall, &BackgroundImage, &Text)>>) {
+                            query: Query<Entity, Or<(With<Wall>, With<BackgroundImage>, With<Text>)>>) {
     debug!("Running despawn game over system");
     for entity in query.iter() {
         commands.entity(entity).despawn();
