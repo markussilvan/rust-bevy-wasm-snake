@@ -2,7 +2,7 @@
 
 A little project for learning Rust, to try out Bevy and WebAssembly.
 
-Bevy version 0.19 compatible.
+Bevy version 0.20 compatible.
 
 The game itself is just a basic snake game. You can try it
 [here on github](https://markussilvan.github.io/rust-bevy-wasm-snake/).
