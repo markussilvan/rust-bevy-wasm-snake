@@ -22,15 +22,15 @@ fn spawn_splashscreen_system(mut commands: Commands,
                              asset_server: Res<AssetServer>) {
     debug!("Running setup splashscreen system");
     let scale_factor = 0.5;
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("logo.png"),
-        transform: Transform {
+    commands.spawn((
+        Sprite::from_image(asset_server.load("logo.png")),
+        Transform {
             scale: Vec3::new(scale_factor, scale_factor, 1.0),
             translation: Vec3::new(0.0, 0.0, 0.0),
             ..default()
         },
-        ..default()
-    }).insert(BackgroundImage);
+        BackgroundImage,
+    ));
 }
 
 fn start_game_system(mut state: ResMut<NextState<AppState>>) {

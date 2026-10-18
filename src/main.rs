@@ -18,7 +18,7 @@ mod gameplay;
 
 use common::AppState;
 use common::{WINDOW_WIDTH, WINDOW_HEIGHT};
-use common::{BackgroundImage, Text};
+use common::{BackgroundImage, GameOverText};
 use wall::Wall;
 
 fn main() {
@@ -55,7 +55,7 @@ fn setup_system(mut commands: Commands,
     window.title = "Snake".to_string();
     window.resizable = false;
     window.resolution = (WINDOW_WIDTH, WINDOW_HEIGHT).into();
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 }
 
 fn exit_system(keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -74,44 +74,44 @@ fn game_over_input_system(mut state: ResMut<NextState<AppState>>,
 
 fn game_over_system(mut commands: Commands,
                     asset_server: Res<AssetServer>) {
-    commands.spawn(
-        TextBundle::from_section(
-            "Game over",
-            TextStyle {
-                font: asset_server.load("FiraSans-Bold.ttf"),
-                font_size: 100.0,
-                color: GRAY.into(),
-            }
-        )
-        .with_text_justify(JustifyText::Center)
-        .with_style(Style {
+    commands.spawn((
+        Text::new("Game over"),
+        TextFont {
+            font: asset_server.load("FiraSans-Bold.ttf"),
+            font_size: 100.0,
+            ..default()
+        },
+        TextColor(GRAY.into()),
+        TextLayout::new_with_justify(JustifyText::Center),
+        Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(50.0),
             right: Val::Px(250.0),
             ..default()
-        }),
-    ).insert(Text);
-    commands.spawn(
-        TextBundle::from_section(
-            "Press space to continue",
-            TextStyle {
-                font: asset_server.load("FiraSans-Bold.ttf"),
-                font_size: 45.0,
-                color: GRAY.into(),
-            }
-        )
-        .with_text_justify(JustifyText::Center)
-        .with_style(Style {
+        },
+        GameOverText,
+    ));
+    commands.spawn((
+        Text::new("Press space to continue"),
+        TextFont {
+            font: asset_server.load("FiraSans-Bold.ttf"),
+            font_size: 45.0,
+            ..default()
+        },
+        TextColor(GRAY.into()),
+        TextLayout::new_with_justify(JustifyText::Center),
+        Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(40.0),
             right: Val::Px(250.0),
             ..default()
-        }),
-    ).insert(Text);
+        },
+        GameOverText,
+    ));
 }
 
 fn despawn_game_over_system(mut commands: Commands,
-                            query: Query<Entity, Or<(With<Wall>, With<BackgroundImage>, With<Text>)>>) {
+                            query: Query<Entity, Or<(With<Wall>, With<BackgroundImage>, With<GameOverText>)>>) {
     debug!("Running despawn game over system");
     for entity in query.iter() {
         commands.entity(entity).despawn();

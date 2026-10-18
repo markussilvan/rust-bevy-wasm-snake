@@ -74,16 +74,15 @@ fn spawn_background_system(mut commands: Commands, asset_server: Res<AssetServer
     debug!("Running spawn background system");
     let scale_factor = crate::common::WINDOW_HEIGHT / 99.0;
 
-    commands.spawn(
-        SpriteBundle {
-            texture: asset_server.load("background.png"),
-            transform: Transform {
-                scale: Vec3::new(scale_factor, scale_factor, 1.0),
-                translation: Vec3::new(0.0, 0.0, GameplayPlugin::BACKGROUND_Z_DEPTH),
-                ..default()
-            },
+    commands.spawn((
+        Sprite::from_image(asset_server.load("background.png")),
+        Transform {
+            scale: Vec3::new(scale_factor, scale_factor, 1.0),
+            translation: Vec3::new(0.0, 0.0, GameplayPlugin::BACKGROUND_Z_DEPTH),
             ..default()
-        }).insert(BackgroundImage);
+        },
+        BackgroundImage,
+    ));
 }
 
 fn spawn_walls_system(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -106,16 +105,13 @@ fn spawn_wall(commands: &mut Commands, asset_server: &Res<AssetServer>, position
     let scale_factor = 1.0;
     let screen_pos = ScreenPosition::from(position);
 
-    commands.spawn(
-        SpriteBundle {
-            texture: asset_server.load("brickwall.png"),
-            transform: Transform {
-                scale: Vec3::new(scale_factor, scale_factor, 1.0),
-                translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::WALL_Z_DEPTH),
-                ..default()
-            },
+    commands.spawn((
+        Sprite::from_image(asset_server.load("brickwall.png")),
+        Transform {
+            scale: Vec3::new(scale_factor, scale_factor, 1.0),
+            translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::WALL_Z_DEPTH),
             ..default()
-        })
+        }))
         .insert(position)
         .insert(Wall::new());
 }
@@ -124,18 +120,17 @@ fn spawn_snake_system(mut commands: Commands) {
     debug!("Running spawn snake system");
     let position = GridPosition::new(GRID_WIDTH / 2, GRID_HEIGHT / 2);
     commands
-        .spawn(SpriteBundle {
-            sprite: Sprite {
+        .spawn((
+            Sprite {
                 color: SnakeHead::HEAD_COLOR,
                 ..default()
             },
-            transform: Transform {
+            Transform {
                 scale: Vec3::new(GRID_SIZE, GRID_SIZE, 1.0),
                 translation: Vec3::new(0.0, 0.0, GameplayPlugin::SNAKE_HEAD_Z_DEPTH),
                 ..default()
             },
-            ..default()
-        })
+        ))
         .insert(SnakeHead::new())
         .insert(position);
 }
@@ -194,22 +189,19 @@ fn grow_snake_system(mut commands: Commands,
 
     debug!("Spawning new snake body piece at position: {}", *position);
     let screen_pos = ScreenPosition::from(*position);
-    let entity = commands.spawn(
-        SpriteBundle {
-            sprite: Sprite {
-                color: SnakeBodyPiece::BODY_COLOR,
-                ..default()
-            },
-            transform: Transform {
-                scale: Vec3::new(GRID_SIZE, GRID_SIZE, 1.0),
-                translation: Vec3::new(
-                    screen_pos.x,
-                    screen_pos.y,
-                    GameplayPlugin::SNAKE_BODY_Z_DEPTH),
-                ..default()
-            },
+    let entity = commands.spawn((
+        Sprite {
+            color: SnakeBodyPiece::BODY_COLOR,
             ..default()
-        })
+        },
+        Transform {
+            scale: Vec3::new(GRID_SIZE, GRID_SIZE, 1.0),
+            translation: Vec3::new(
+                screen_pos.x,
+                screen_pos.y,
+                GameplayPlugin::SNAKE_BODY_Z_DEPTH),
+            ..default()
+        }))
         .insert(*position)
         .insert(SnakeBodyPiece::new())
         .id();
@@ -223,15 +215,9 @@ fn spawn_food_system(mut commands: Commands,
     let screen_pos = ScreenPosition::from(position);
     let food = Food::random();
     debug!("Spawning food at position: {}", position);
-    commands.spawn(
-        SpriteBundle {
-            texture: asset_server.load(food.asset.clone()),
-            transform: Transform {
-                translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::FOOD_Z_DEPTH),
-                ..default()
-            },
-            ..default()
-        })
+    commands.spawn((
+        Sprite::from_image(asset_server.load(food.asset.clone())),
+        Transform::from_xyz(screen_pos.x, screen_pos.y, GameplayPlugin::FOOD_Z_DEPTH)))
         .insert(food)
         .insert(position);
 }
@@ -251,18 +237,16 @@ fn spawn_bomb_system(mut commands: Commands,
         UVec2::new(30, 30), 4, 1, None, None);
     let layout_handle = texture_atlas_layouts.add(layout);
     commands.spawn((
-        SpriteBundle {
-            texture: texture_handle,
-            transform: Transform {
-                scale: Vec3::new(scale_factor, scale_factor, 1.0),
-                translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::BOMB_Z_DEPTH),
-                ..default()
-            },
+        Sprite::from_atlas_image(
+            texture_handle,
+            TextureAtlas {
+                layout: layout_handle,
+                index: 0,
+            }),
+        Transform {
+            scale: Vec3::new(scale_factor, scale_factor, 1.0),
+            translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::BOMB_Z_DEPTH),
             ..default()
-        },
-        TextureAtlas {
-            layout: layout_handle,
-            index: 0,
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ))
@@ -347,11 +331,12 @@ fn update_particles_system(commands: Commands,
 fn sprite_animation_system(
     time: Res<Time>,
     texture_atlas_layouts: Res<Assets<TextureAtlasLayout>>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlas)>,
+    mut query: Query<(&mut AnimationTimer, &mut Sprite)>,
 ) {
-    for (mut timer, mut atlas) in &mut query {
+    for (mut timer, mut sprite) in &mut query {
         timer.tick(time.delta());
         if timer.just_finished() {
+            let Some(atlas) = sprite.texture_atlas.as_mut() else { continue };
             let layout = texture_atlas_layouts.get(&atlas.layout).unwrap();
             atlas.index = (atlas.index + 1) % layout.textures.len();
         }
@@ -405,11 +390,7 @@ fn check_if_snake_exploded(commands: &mut Commands,
         if ((snake_piece_position.x as i32 - bomb_position.x as i32).abs() <= 1) &&
             ((snake_piece_position.y as i32 - bomb_position.y as i32).abs() <= 1) {
             debug!("Snake is in the explosion zone!");
-            commands.spawn(
-                SpriteBundle {
-                    ..default()
-                })
-                .insert(DeathTimer::default());
+            commands.spawn(DeathTimer::default());
             break;
         }
     }

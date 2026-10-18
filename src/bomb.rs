@@ -111,19 +111,16 @@ impl ParticleSystem {
     ) {
         debug!("Spawning new particle to position {}", position);
         let particle = Particle::new(velocity, size, GOLD);
-        let entity = commands.spawn(
-            SpriteBundle {
-                sprite: Sprite {
-                    color: GOLD.into(),
-                    ..default()
-                },
-                transform: Transform {
-                    scale: Vec3::new(size, size, 1.0),
-                    translation: Vec3::new(position.x, position.y, position.z),
-                    ..default()
-                },
+        let entity = commands.spawn((
+            Sprite {
+                color: GOLD.into(),
                 ..default()
-            })
+            },
+            Transform {
+                scale: Vec3::new(size, size, 1.0),
+                translation: Vec3::new(position.x, position.y, position.z),
+                ..default()
+            }))
             .insert(particle)
             .id();
         self.particles.push(entity);

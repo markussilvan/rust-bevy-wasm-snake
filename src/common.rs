@@ -26,7 +26,7 @@ impl Default for AppState {
 pub struct BackgroundImage;
 
 #[derive(Component, Clone, Copy, PartialEq, Eq)]
-pub struct Text;
+pub struct GameOverText;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
