@@ -38,13 +38,12 @@ fn main() {
                     ..default()
                 })
             )
-        .add_plugin(splashscreen::SplashScreenPlugin)
-        .add_plugin(gameplay::GameplayPlugin)
-        .add_startup_system(setup_system)
-        .add_system(exit_system)
-        .add_system(game_over_system.in_schedule(OnEnter(AppState::GameOver)))
-        .add_system(game_over_input_system.in_set(OnUpdate(AppState::GameOver)))
-        .add_system(despawn_game_over_system.in_schedule(OnExit(AppState::GameOver)))
+        .add_plugins((splashscreen::SplashScreenPlugin, gameplay::GameplayPlugin))
+        .add_systems(Startup, setup_system)
+        .add_systems(Update, exit_system)
+        .add_systems(OnEnter(AppState::GameOver), game_over_system)
+        .add_systems(Update, game_over_input_system.run_if(in_state(AppState::GameOver)))
+        .add_systems(OnExit(AppState::GameOver), despawn_game_over_system)
         .run();
 }
 
@@ -86,11 +85,8 @@ fn game_over_system(mut commands: Commands,
         .with_text_alignment(TextAlignment::Center)
         .with_style(Style {
             position_type: PositionType::Absolute,
-            position: UiRect {
-                bottom: Val::Percent(50.0),
-                right: Val::Px(250.0),
-                ..default()
-            },
+            bottom: Val::Percent(50.0),
+            right: Val::Px(250.0),
             ..default()
         }),
     ).insert(Text);
@@ -106,11 +102,8 @@ fn game_over_system(mut commands: Commands,
         .with_text_alignment(TextAlignment::Center)
         .with_style(Style {
             position_type: PositionType::Absolute,
-            position: UiRect {
-                bottom: Val::Percent(40.0),
-                right: Val::Px(250.0),
-                ..default()
-            },
+            bottom: Val::Percent(40.0),
+            right: Val::Px(250.0),
             ..default()
         }),
     ).insert(Text);

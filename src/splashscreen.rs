@@ -10,11 +10,11 @@ pub struct SplashScreenPlugin;
 impl Plugin for SplashScreenPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_system(spawn_splashscreen_system.in_schedule(OnEnter(AppState::SplashScreen)))
-            .add_system(start_game_system
-                .in_set(OnUpdate(AppState::SplashScreen))
+            .add_systems(OnEnter(AppState::SplashScreen), spawn_splashscreen_system)
+            .add_systems(Update, start_game_system
+                .run_if(in_state(AppState::SplashScreen))
                 .run_if(on_timer(Duration::from_millis(3000))))
-            .add_system(despawn_splashscreen_system.in_schedule(OnExit(AppState::SplashScreen)));
+            .add_systems(OnExit(AppState::SplashScreen), despawn_splashscreen_system);
     }
 }
 

@@ -28,44 +28,44 @@ impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
         let particle_system = ParticleSystem::new();
         app
-            .add_systems((spawn_background_system, spawn_walls_system, spawn_snake_system)
-                .in_schedule(OnEnter(AppState::Gameplay)))
-            .add_systems((control_snake_system, sprite_animation_system)
-                .in_set(OnUpdate(AppState::Gameplay)))
-            .add_system(wall_collision_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(OnEnter(AppState::Gameplay),
+                (spawn_background_system, spawn_walls_system, spawn_snake_system))
+            .add_systems(Update, (control_snake_system, sprite_animation_system)
+                .run_if(in_state(AppState::Gameplay)))
+            .add_systems(Update, wall_collision_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(grow_snake_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, grow_snake_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(move_snake_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, move_snake_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(food_collision_system.after(move_snake_system)
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, food_collision_system.after(move_snake_system)
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(bomb_collision_system.after(move_snake_system)
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, bomb_collision_system.after(move_snake_system)
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(snake_body_collision_system.after(move_snake_system)
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, snake_body_collision_system.after(move_snake_system)
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(bomb_timer_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, bomb_timer_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(update_particles_system.after(bomb_timer_system)
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, update_particles_system.after(bomb_timer_system)
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(death_delay_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, death_delay_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(200))))
-            .add_system(spawn_food_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, spawn_food_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(5000))))
-            .add_system(spawn_bomb_system
-                .in_set(OnUpdate(AppState::Gameplay))
+            .add_systems(Update, spawn_bomb_system
+                .run_if(in_state(AppState::Gameplay))
                 .run_if(on_timer(Duration::from_millis(27000))))
-            .add_system(despawn_gameplay_system.in_schedule(OnExit(AppState::Gameplay)))
+            .add_systems(OnExit(AppState::Gameplay), despawn_gameplay_system)
             .insert_resource(particle_system);
     }
 }
