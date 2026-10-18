@@ -8,12 +8,12 @@ license = "MIT"
 
 [dependencies]
 bevy = "0.20"
-rand = "0.8.5"
+rand = "0.10"
 wasm-bindgen = "0.2"
 
-# rand 0.8 uses getrandom 0.2, which needs the "js" feature on the web
+# rand uses getrandom, which needs the "wasm_js" feature on the web
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+getrandom = { version = "0.4", features = ["wasm_js"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 bevy = { version = "0.20", features = ["dynamic_linking"] }

@@ -15,8 +15,8 @@ pub(crate) struct Food {
 
 impl Food {
     pub fn random() -> Food {
-        let mut rng = rand::thread_rng();
-        let kind: usize = rng.gen::<usize>() % FOODS.len() as usize;
+        let mut rng = rand::rng();
+        let kind: usize = rng.random_range(0..FOODS.len());
         Food { value: FOODS[kind].1, asset: FOODS[kind].0.to_string() }
     }
 }

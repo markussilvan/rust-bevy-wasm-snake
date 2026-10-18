@@ -88,9 +88,9 @@ impl GridPosition {
     }
 
     pub fn random(max_x: u32, max_y: u32) -> GridPosition {
-        let mut rng = rand::thread_rng();
-        let x: i32 = rng.gen::<i32>() % max_x as i32;
-        let y: i32 = rng.gen::<i32>() % max_y as i32;
+        let mut rng = rand::rng();
+        let x: i32 = rng.random::<i32>() % max_x as i32;
+        let y: i32 = rng.random::<i32>() % max_y as i32;
         GridPosition { x: x.abs() as u32, y: y.abs() as u32}
     }
 
