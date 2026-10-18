@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::color::palettes::css::GOLD;
 
 use crate::common::ScreenPosition;
 
@@ -20,11 +21,11 @@ impl Bomb {
 pub struct Particle {
     velocity: Vec2,
     size: f32,
-    color: Color,
+    color: Srgba,
 }
 
 impl Particle {
-    pub fn new(velocity: Vec2, size: f32, color: Color) -> Self {
+    pub fn new(velocity: Vec2, size: f32, color: Srgba) -> Self {
         Particle {
             velocity,
             size,
@@ -33,10 +34,8 @@ impl Particle {
     }
 
     pub fn update(&mut self) {
-        let a = self.color.a();
-        self.color.set_a(0.9 * a);
-        let b = self.color.b();
-        self.color.set_b(1.2 * b);
+        self.color.alpha *= 0.9;
+        self.color.blue *= 1.2;
 
         self.size -= 5.0;
     }
@@ -92,7 +91,7 @@ impl ParticleSystem {
             transform.translation.x += particle.velocity.x;
             transform.translation.y += particle.velocity.y;
 
-            sprite.color = particle.color;
+            sprite.color = particle.color.into();
         }
     }
 
@@ -111,11 +110,11 @@ impl ParticleSystem {
         velocity: Vec2,
     ) {
         debug!("Spawning new particle to position {}", position);
-        let particle = Particle::new(velocity, size, Color::GOLD);
+        let particle = Particle::new(velocity, size, GOLD);
         let entity = commands.spawn(
             SpriteBundle {
                 sprite: Sprite {
-                    color: Color::GOLD,
+                    color: GOLD.into(),
                     ..default()
                 },
                 transform: Transform {

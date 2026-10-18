@@ -248,21 +248,21 @@ fn spawn_bomb_system(mut commands: Commands,
 
     let texture_handle = asset_server.load("bomb_spritesheet.png");
     let layout = TextureAtlasLayout::from_grid(
-        Vec2::new(30.0, 30.0), 4, 1, None, None);
+        UVec2::new(30, 30), 4, 1, None, None);
     let layout_handle = texture_atlas_layouts.add(layout);
     commands.spawn((
-        SpriteSheetBundle {
+        SpriteBundle {
             texture: texture_handle,
-            atlas: TextureAtlas {
-                layout: layout_handle,
-                index: 0,
-            },
             transform: Transform {
                 scale: Vec3::new(scale_factor, scale_factor, 1.0),
                 translation: Vec3::new(screen_pos.x, screen_pos.y, GameplayPlugin::BOMB_Z_DEPTH),
                 ..default()
             },
             ..default()
+        },
+        TextureAtlas {
+            layout: layout_handle,
+            index: 0,
         },
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
     ))

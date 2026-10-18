@@ -6,7 +6,7 @@ use crate::common::Direction;
 pub(crate) struct SnakeBodyPiece;
 
 impl SnakeBodyPiece {
-    pub const BODY_COLOR: Color = Color::rgb(0.6, 0.6, 0.6);
+    pub const BODY_COLOR: Color = Color::srgb(0.6, 0.6, 0.6);
 
     pub fn new() -> SnakeBodyPiece {
         SnakeBodyPiece {}
@@ -22,7 +22,7 @@ pub(crate) struct SnakeHead {
 }
 
 impl SnakeHead {
-    pub const HEAD_COLOR: Color = Color::rgb(0.7, 0.7, 0.7);
+    pub const HEAD_COLOR: Color = Color::srgb(0.7, 0.7, 0.7);
 
     pub fn new() -> Self {
         SnakeHead {

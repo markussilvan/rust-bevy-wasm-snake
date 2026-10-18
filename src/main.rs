@@ -3,6 +3,7 @@
 #[doc = include_str!("../README.md")]
 
 use bevy::prelude::*;
+use bevy::color::palettes::css::GRAY;
 use bevy::app::AppExit;
 use bevy::log::LogPlugin;
 use bevy::window::PrimaryWindow;
@@ -22,7 +23,6 @@ use wall::Wall;
 
 fn main() {
     App::new()
-        .init_state::<AppState>()
         .add_plugins(DefaultPlugins.set(
             LogPlugin {
                 filter: "error,wgpu_core=error,wgpu_hal=error,snake=debug".into(),
@@ -38,6 +38,7 @@ fn main() {
                     ..default()
                 })
             )
+        .init_state::<AppState>()
         .add_plugins((splashscreen::SplashScreenPlugin, gameplay::GameplayPlugin))
         .add_systems(Startup, setup_system)
         .add_systems(Update, exit_system)
@@ -60,7 +61,7 @@ fn setup_system(mut commands: Commands,
 fn exit_system(keyboard_input: Res<ButtonInput<KeyCode>>,
     mut exit: EventWriter<AppExit>) {
     if keyboard_input.pressed(KeyCode::Escape) {
-        exit.send(AppExit);
+        exit.send(AppExit::Success);
     }
 }
 
@@ -79,7 +80,7 @@ fn game_over_system(mut commands: Commands,
             TextStyle {
                 font: asset_server.load("FiraSans-Bold.ttf"),
                 font_size: 100.0,
-                color: Color::GRAY,
+                color: GRAY.into(),
             }
         )
         .with_text_justify(JustifyText::Center)
@@ -96,7 +97,7 @@ fn game_over_system(mut commands: Commands,
             TextStyle {
                 font: asset_server.load("FiraSans-Bold.ttf"),
                 font_size: 45.0,
-                color: Color::GRAY,
+                color: GRAY.into(),
             }
         )
         .with_text_justify(JustifyText::Center)
