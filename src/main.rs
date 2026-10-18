@@ -77,12 +77,12 @@ fn game_over_system(mut commands: Commands,
     commands.spawn((
         Text::new("Game over"),
         TextFont {
-            font: asset_server.load("FiraSans-Bold.ttf"),
-            font_size: 100.0,
+            font: asset_server.load::<Font>("FiraSans-Bold.ttf").into(),
+            font_size: FontSize::Px(100.0),
             ..default()
         },
         TextColor(GRAY.into()),
-        TextLayout::new_with_justify(Justify::Center),
+        TextLayout::justify(Justify::Center),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(50.0),
@@ -94,12 +94,12 @@ fn game_over_system(mut commands: Commands,
     commands.spawn((
         Text::new("Press space to continue"),
         TextFont {
-            font: asset_server.load("FiraSans-Bold.ttf"),
-            font_size: 45.0,
+            font: asset_server.load::<Font>("FiraSans-Bold.ttf").into(),
+            font_size: FontSize::Px(45.0),
             ..default()
         },
         TextColor(GRAY.into()),
-        TextLayout::new_with_justify(Justify::Center),
+        TextLayout::justify(Justify::Center),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Percent(40.0),
