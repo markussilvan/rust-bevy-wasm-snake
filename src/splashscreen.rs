@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
-use bevy::utils::Duration;
+use std::time::Duration;
 
 use crate::common::AppState;
 use crate::common::BackgroundImage;
@@ -41,6 +41,6 @@ fn start_game_system(mut state: ResMut<NextState<AppState>>) {
 fn despawn_splashscreen_system(mut commands: Commands,
                                query: Query<Entity, With<BackgroundImage>>) {
     debug!("Running despawn splashscreen system");
-    let entity = query.single();
-    commands.entity(entity).despawn_recursive();
+    let Ok(entity) = query.single() else { return };
+    commands.entity(entity).despawn();
 }

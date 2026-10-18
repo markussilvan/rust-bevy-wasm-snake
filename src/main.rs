@@ -51,7 +51,7 @@ fn main() {
 fn setup_system(mut commands: Commands,
                 mut primary_query: Query<&mut Window, With<PrimaryWindow>>) {
     debug!("Running setup system");
-    let mut window = primary_query.single_mut();
+    let Ok(mut window) = primary_query.single_mut() else { return };
     window.title = "Snake".to_string();
     window.resizable = false;
     window.resolution = (WINDOW_WIDTH, WINDOW_HEIGHT).into();
@@ -61,7 +61,7 @@ fn setup_system(mut commands: Commands,
 fn exit_system(keyboard_input: Res<ButtonInput<KeyCode>>,
     mut exit: EventWriter<AppExit>) {
     if keyboard_input.pressed(KeyCode::Escape) {
-        exit.send(AppExit::Success);
+        exit.write(AppExit::Success);
     }
 }
 

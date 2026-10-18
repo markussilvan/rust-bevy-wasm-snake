@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
-use bevy::utils::Duration;
+use std::time::Duration;
 
 use crate::common::AppState;
 use crate::common::BackgroundImage;
@@ -136,7 +136,7 @@ fn spawn_snake_system(mut commands: Commands) {
 }
 
 fn control_snake_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut q: Query<&mut SnakeHead>) {
-    let mut snake = q.single_mut();
+    let Ok(mut snake) = q.single_mut() else { return };
 
     if snake.next_turn {
         return;
@@ -161,7 +161,7 @@ fn control_snake_system(keyboard_input: Res<ButtonInput<KeyCode>>, mut q: Query<
 fn move_snake_system(mut head_q: Query<(&mut GridPosition, &mut Transform, &mut SnakeHead)>,
                      mut body_q: Query<(&mut GridPosition, &mut Transform), (With<SnakeBodyPiece>, Without<SnakeHead>)>) {
     // the last body piece to the front
-    let (mut head_position, mut transform, mut snake) = head_q.single_mut();
+    let Ok((mut head_position, mut transform, mut snake)) = head_q.single_mut() else { return };
     if let Some(entity) = snake.get_last_body_piece() {
         if let Ok((mut position, mut transform)) = body_q.get_mut(entity) {
             *position = *head_position;
@@ -182,7 +182,7 @@ fn move_snake_system(mut head_q: Query<(&mut GridPosition, &mut Transform, &mut 
 
 fn grow_snake_system(mut commands: Commands,
                      mut q: Query<(&mut SnakeHead, &GridPosition)>) {
-    let (mut snake, position) = q.single_mut();
+    let Ok((mut snake, position)) = q.single_mut() else { return };
     if !snake.can_grow() {
         return;
     }
@@ -256,7 +256,7 @@ fn spawn_bomb_system(mut commands: Commands,
 
 fn wall_collision_system(mut state: ResMut<NextState<AppState>>,
                          snake_pos_q: Query<&GridPosition, With<SnakeHead>>) {
-    let snake_position = snake_pos_q.single();
+    let Ok(snake_position) = snake_pos_q.single() else { return };
 
     if (snake_position.x <= 0) || (snake_position.x >= GRID_WIDTH) {
         state.set(AppState::GameOver);
@@ -269,7 +269,7 @@ fn wall_collision_system(mut state: ResMut<NextState<AppState>>,
 fn food_collision_system(mut commands: Commands,
                          mut snake_query: Query<(&mut SnakeHead, &GridPosition)>,
                          food_query: Query<(Entity, &Food, &GridPosition), With<Food>>) {
-    let (mut snake, snake_position) = snake_query.single_mut();
+    let Ok((mut snake, snake_position)) = snake_query.single_mut() else { return };
 
     for (entity, food, food_position) in food_query.iter() {
         if snake_position == food_position {
@@ -283,7 +283,7 @@ fn food_collision_system(mut commands: Commands,
 fn bomb_collision_system(mut commands: Commands,
                          mut snake_position_query: Query<&GridPosition, With<SnakeHead>>,
                          bomb_query: Query<(Entity, &GridPosition), With<Bomb>>) {
-    let snake_position = snake_position_query.single_mut();
+    let Ok(snake_position) = snake_position_query.single_mut() else { return };
 
     for (entity, bomb_position) in bomb_query.iter() {
         if snake_position == bomb_position {
@@ -296,7 +296,7 @@ fn bomb_collision_system(mut commands: Commands,
 fn snake_body_collision_system(mut state: ResMut<NextState<AppState>>,
                                snake_query: Query<(&SnakeHead, &GridPosition), With<SnakeHead>>,
                                body_query: Query<&GridPosition, With<SnakeBodyPiece>>) {
-    let (snake, snake_position) = snake_query.single();
+    let Ok((snake, snake_position)) = snake_query.single() else { return };
     let mut next_position = snake_position.clone();
     next_position.move_position(snake.direction, 1);
     for body_position in body_query.iter() {
